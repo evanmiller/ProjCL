@@ -72,15 +72,6 @@ __kernel void pl_project_robinson_s(
 	xy_out[i].odd = y;
 }
 
-__kernel void pl_project_robinson_e(
-	__global float2 *xy_in,
-	__global float2 *xy_out,
-	const unsigned int count
-	
-) {
-//	pl_project_robinson_s(xy_in, xy_out, count);
-}
-
 __kernel void pl_unproject_robinson_s(
 	__global float2 *xy_in,
 	__global float2 *xy_out,
@@ -128,12 +119,4 @@ __kernel void pl_unproject_robinson_s(
 	
 	xy_out[i].even = degrees(lambda);
 	xy_out[i].odd = degrees(phi);
-}
-
-__kernel void pl_unproject_robinson_e(
-	__global float2 *xy_in,
-	__global float2 *xy_out,
-	const unsigned int count
-) {
-//	pl_unproject_robinson_e(xy_in, xy_out, count);
 }
