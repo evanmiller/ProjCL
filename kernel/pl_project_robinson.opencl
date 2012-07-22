@@ -33,6 +33,12 @@ __constant float4 ROBINSON_Y[] = {
 (float4)(0.31,   0.0124108,      3.73349e-06,    -1.1779e-06),
 (float4)(0.372,  0.0123598,      -1.3935e-05,    4.39588e-06),
 (float4)(0.434,  0.0125501,      5.20034e-05,    -1.00051e-05),
+
+/* This should be 0.4958, and the other values should be
+   updated accordingly. Proj.4 fixed the first column but not
+   the others, and so their projection is inconsistent.
+   I can't find the source of the other coefficients,
+   so for now we use the wrong (but consistent) coefficients. */
 (float4)(0.4968, 0.0123198,      -9.80735e-05,   9.22397e-06),
 (float4)(0.5571, 0.0120308,      4.02857e-05,    -5.2901e-06),
 (float4)(0.6176, 0.0120369,      -3.90662e-05,   7.36117e-07),
@@ -50,7 +56,11 @@ __constant float4 ROBINSON_Y[] = {
 __kernel void pl_project_robinson_s(
 	__global float2 *xy_in,
 	__global float2 *xy_out,
-	const unsigned int count
+	const unsigned int count,
+
+	float scale,
+    float x0,
+    float y0
 ) {
 	int i = get_global_id(0);
 	
@@ -68,19 +78,23 @@ __kernel void pl_project_robinson_s(
 	y = V(ROBINSON_Y[index], dphi) * FYC;
 	y = select(y, -y, phi < 0.f);
 	
-	xy_out[i].even = x;
-	xy_out[i].odd = y;
+	xy_out[i].even = x0 + scale * x;
+	xy_out[i].odd = y0 + scale * y;
 }
 
 __kernel void pl_unproject_robinson_s(
 	__global float2 *xy_in,
 	__global float2 *xy_out,
-	const unsigned int count
+	const unsigned int count,
+
+	float scale,
+    float x0,
+    float y0
 ) {
 	int i = get_global_id(0);
 	
-	float x = xy_in[i].even;
-	float y = xy_in[i].odd;
+	float x = (xy_in[i].even - x0) / scale;
+	float y = (xy_in[i].odd - y0) / scale;
 	
 	float lambda, phi;
 	

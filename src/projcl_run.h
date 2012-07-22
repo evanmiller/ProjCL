@@ -22,7 +22,8 @@ cl_int pl_enqueue_kernel_lambert_azimuthal_equal_area(cl_kernel kernel, PLContex
     PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
 cl_int pl_enqueue_kernel_mercator(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy_in, cl_mem xy_out, size_t count,
     PLSpheroid pl_ell, float scale, float x0, float y0);
-cl_int pl_enqueue_kernel_robinson(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy_in, cl_mem xy_out, size_t count);
+cl_int pl_enqueue_kernel_robinson(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy_in, cl_mem xy_out, size_t count,
+        float scale, float x0, float y0);
 cl_int pl_enqueue_kernel_transverse_mercator(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy_in, cl_mem xy_out, size_t count,
     PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
 cl_int pl_enqueue_kernel_winkel_tripel(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy_in, cl_mem xy_out, size_t count,

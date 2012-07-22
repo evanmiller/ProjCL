@@ -220,24 +220,28 @@ cl_int pl_unproject_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, floa
     return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
 }
 
-cl_int pl_project_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out) {
+cl_int pl_project_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
+        float scale, float x0, float y0) {
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "robinson", 1, PL_SPHEROID_SPHERE);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
-	cl_int error = pl_enqueue_kernel_robinson(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count);
+	cl_int error = pl_enqueue_kernel_robinson(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
+            scale, x0, y0);
     if (error != CL_SUCCESS)
         return error;
     
     return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
 }
 
-cl_int pl_unproject_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out) {
+cl_int pl_unproject_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
+        float scale, float x0, float y0) {
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "robinson", 0, PL_SPHEROID_SPHERE);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
-	cl_int error = pl_enqueue_kernel_robinson(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count);
+	cl_int error = pl_enqueue_kernel_robinson(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
+            scale, x0, y0);
     if (error != CL_SUCCESS)
         return error;
     

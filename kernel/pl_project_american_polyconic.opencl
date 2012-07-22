@@ -93,8 +93,9 @@ __kernel void pl_unproject_american_polyconic_e(
 	float8 r = y * y + x * x;
 	
 	float8 c, sinphi, cosphi, sincosphi, ml, mlb, mlp, dPhi;
+    int iter;
 		
-	for (phi = y, i = I_ITER; i; --i) {
+	for (phi = y, iter = I_ITER; iter; --iter) {
 		sinphi = sincos(phi, &cosphi);
 		sincosphi = sinphi * cosphi;
 		mlp = sqrt(1.f - ecc2 * sinphi * sinphi);
@@ -144,8 +145,9 @@ __kernel void pl_unproject_american_polyconic_s(
 	float8 r = y * y + x * x;
 	
 	float8 dPhi, tanphi;
+    int iter;
 	
-	for(phi = y, i = I_ITER; i; --i) {
+	for(phi = y, iter = I_ITER; iter; --iter) {
 		tanphi = tan(phi);
 		dPhi = (y * (phi * tanphi + 1.f) - phi - 0.5f * (phi * phi + r) * tanphi) /
 			((phi - y) / tanphi - 1.f);

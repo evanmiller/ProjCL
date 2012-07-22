@@ -479,13 +479,18 @@ cl_int pl_enqueue_kernel_mercator(cl_kernel kernel, PLContext *pl_ctx,
 	return _pl_enqueue_kernel_1d(pl_ctx->queue, kernel, vec_count);
 }
 
-cl_int pl_enqueue_kernel_robinson(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy_in, cl_mem xy_out, size_t count) {
+cl_int pl_enqueue_kernel_robinson(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy_in, cl_mem xy_out, size_t count,
+        float scale, float x0, float y0) {
 	cl_int error = CL_SUCCESS;
 	cl_int argc = 0;
 	
 	error |= clSetKernelArg(kernel, argc++, sizeof(cl_mem), &xy_in);
 	error |= clSetKernelArg(kernel, argc++, sizeof(cl_mem), &xy_out);
 	error |= clSetKernelArg(kernel, argc++, sizeof(cl_uint), &count);
+
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &scale);
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &x0);
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &y0);
 	if (error != CL_SUCCESS)
 		return error;
 	
