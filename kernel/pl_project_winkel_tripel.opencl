@@ -54,8 +54,8 @@ __kernel void pl_unproject_winkel_tripel_s(
     float8 y = (xy_in[i].odd - y0) / scale;
     
     float8 phi = y;
-    float8 sinPhi = sin(phi);
-    float8 cosPhi = sqrt(1.f - sinPhi * sinPhi);
+    float8 cosPhi;
+    float8 sinPhi = sincos(phi, &cosPhi);
     float8 lambda = 2.f * x / (cosPhi + cosphi1);
     
     float8 f1, f2;
@@ -78,8 +78,7 @@ __kernel void pl_unproject_winkel_tripel_s(
     int iter = 4;
     do {
         sin2Phi = 2.f * sinPhi * cosPhi;
-        cosLambda2 = cos(.5f * lambda);
-        sinLambda2 = copysign(sqrt(1.f - cosLambda2 * cosLambda2), lambda);
+        sinLambda2 = sincos(.5f * lambda, &cosLambda2);
         sinLambda = 2.f * sinLambda2 * cosLambda2;
 
         d = acos(cosPhi*cosLambda2);
@@ -146,12 +145,10 @@ __kernel void pl_unproject_winkel_tripel_s(
         lambda += dLam * dLam / (dLam + 0.5f * ddLam);
          */
 
-                                
         if (!any(fabs(dPhi) > TOL6) && !any(fabs(dLam) > TOL6))
             break;
         
-        sinPhi = sin(phi);
-        cosPhi = sqrt(1.f - sinPhi * sinPhi);
+        sinPhi = sincos(phi, &cosPhi);
     } while (--iter);
     
 //    printf("Iterations left: %d\n", iter);
