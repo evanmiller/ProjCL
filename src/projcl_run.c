@@ -107,6 +107,8 @@ static struct pl_datum_info pl_datum_params[] = {
     { /* PL_DATUM_NAD_27 */
          -8.0,   160.0,   176.0,    0.0,     0.0,     0.0,    0.0     },
     { /* PL_DATUM_NAD_83 */
+          0.0,     0.0,     0.0,    0.0,     0.0,     0.0,    0.0     },
+    { /* PL_DATUM_ETRS_89 */
           0.0,     0.0,     0.0,    0.0,     0.0,     0.0,    0.0     }
 };
 
@@ -125,7 +127,8 @@ static struct pl_spheroid_info_s pl_spheroid_params[] = {
     { 6377397.155, 6356078.963 }, /* Bessel 1841 */
     { 6378206.4,   6356583.8 }, /* Clarke 1866 */
     { 6378160.0,   6356774.7192 }, /* GRS 1967 */
-    { 6378137.0, 6378137.0 } /* WGS 84 Major Auxiliary */
+    { 6378137.0, 6378137.0 }, /* WGS 84 Major Auxiliary */
+    { 6378388.0, 6356911.9 } /* Hayford / International 1924 */
 };
 
 struct pl_matrix {
