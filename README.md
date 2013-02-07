@@ -5,7 +5,8 @@ ProjCL is a C interface to OpenCL routines that perform various geographic
 computations, including map projection, geodesic (distance) calculations, and
 datum conversion. For projection calculations it is several times faster than
 Proj.4 on the CPU, and could be even faster on a GPU for large batches but I
-haven't actually done much GPU performance testing.
+haven't actually done much GPU performance testing. For datum shifts ProjCL
+is smarter than Proj.4 because it does some matrix math in advance.
 
 Most projection routines were originally adapted from Proj.4 code, with
 branches replaced with select() statements and various tweaks implemented along
@@ -54,7 +55,7 @@ Setup
     PLContext *ctx = pl_context_init(CL_DEVICE_TYPE_CPU, &error);
 
     PLCode *code = pl_compile_code(ctx, "/path/to/ProjCL/kernel", 
-            PL_MODULE_PROJECTION | PL_MODULE_FILTER);
+            PL_MODULE_DATUM | PL_MODULE_GEODESIC | PL_MODULE_PROJECTION);
 
     error = pl_load_code(ctx, code);
 
@@ -104,7 +105,7 @@ Inverse projection
 
     pl_unload_projection_data(cartesian_buffer);
 
-Forward geodesic: Fixed distance, multiple points, multiple angles
+Forward geodesic: Fixed distance, multiple points, multiple angles (blast radii)
 --
 
     /* get the point data from somewhere */
@@ -130,7 +131,7 @@ Forward geodesic: Fixed distance, multiple points, multiple angles
     /* unload */
     pl_unload_forward_geodesic_fixed_distance_data(buf);
 
-Forward geodesic: Fixed angle, single point, multiple distances
+Forward geodesic: Fixed angle, single point, multiple distances (great circle)
 --
 
     int count = ...;
@@ -211,5 +212,5 @@ Some tips on writing OpenCL routines:
 * Use "select" or the ternary operator for conditional assignments
 * Use "sincos" if you need the sine and cosine of the same angle
 * If you're on a Mac, get used to bisecting your code to find compilation
-  errors. Apple's OpenCL implementation is a low-point in the history of
+  errors. Apple's OpenCL implementation is a low point in the history of
   compilers.

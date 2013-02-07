@@ -1,4 +1,44 @@
 
+typedef enum PLImageFilter {
+    PL_IMAGE_FILTER_NEAREST_NEIGHBOR,
+    PL_IMAGE_FILTER_BILINEAR,
+    PL_IMAGE_FILTER_BICUBIC,
+    PL_IMAGE_FILTER_QUASI_BICUBIC
+} PLImageFilter;
+
+#define PL_MODULE_NEAREST_NEIGHBOR              (1 << 24)
+#define PL_MODULE_BILINEAR                      (1 << 25)
+#define PL_MODULE_BICUBIC                       (1 << 26)
+#define PL_MODULE_QUASI_BICUBIC                 (1 << 27)
+
+#define PL_MODULE_FILTER                        (0xF << 24)
+
+typedef struct PLImageBuffer_s {
+    cl_mem      image;
+    cl_image_format image_format;
+    size_t      width;
+    size_t      height;
+    size_t      row_pitch;
+} PLImageBuffer;
+
+typedef struct PLImageArrayBuffer_s {
+    cl_mem      image;
+    cl_image_format image_format;
+    size_t      width;
+    size_t      height;
+    size_t      depth;
+    size_t      tiles_across;
+    size_t      tiles_down;
+    size_t      row_pitch;
+    size_t      slice_pitch;
+} PLImageArrayBuffer;
+
+typedef struct PLPointGridBuffer_s {
+    cl_mem      grid;
+    size_t      width;
+    size_t      height;
+} PLPointGridBuffer;
+
 PLImageBuffer *pl_load_image(PLContext *pl_ctx, 
                              int channel_order,
                              int channel_type,

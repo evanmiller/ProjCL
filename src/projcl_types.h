@@ -54,13 +54,6 @@ typedef enum PLSpheroid {
     PL_SPHEROID_INTERNATIONAL_1924
 } PLSpheroid;
 
-typedef enum PLImageFilter {
-    PL_IMAGE_FILTER_NEAREST_NEIGHBOR,
-    PL_IMAGE_FILTER_BILINEAR,
-    PL_IMAGE_FILTER_BICUBIC,
-    PL_IMAGE_FILTER_QUASI_BICUBIC
-} PLImageFilter;
-
 #define PL_MODULE_DATUM                         (1 << 1)
 #define PL_MODULE_GEODESIC                      (1 << 2)
 #define PL_MODULE_WARP                          (1 << 3)
@@ -74,13 +67,6 @@ typedef enum PLImageFilter {
 #define PL_MODULE_WINKEL_TRIPEL                 (1 << 11)
 
 #define PL_MODULE_PROJECTION                    (0xFFFF - 7)
-
-#define PL_MODULE_NEAREST_NEIGHBOR              (1 << 24)
-#define PL_MODULE_BILINEAR                      (1 << 25)
-#define PL_MODULE_BICUBIC                       (1 << 26)
-#define PL_MODULE_QUASI_BICUBIC                 (1 << 27)
-
-#define PL_MODULE_FILTER                        (0xF << 24)
 
 typedef struct PLCode_s {
 	unsigned char		*binary;
@@ -146,29 +132,3 @@ typedef struct PLInverseGeodesicBuffer_s {
 	cl_uint     xy2_count;
 	cl_mem      dist_out;
 } PLInverseGeodesicBuffer;
-
-typedef struct PLImageBuffer_s {
-    cl_mem      image;
-    cl_image_format image_format;
-    size_t      width;
-    size_t      height;
-    size_t      row_pitch;
-} PLImageBuffer;
-
-typedef struct PLImageArrayBuffer_s {
-    cl_mem      image;
-    cl_image_format image_format;
-    size_t      width;
-    size_t      height;
-    size_t      depth;
-    size_t      tiles_across;
-    size_t      tiles_down;
-    size_t      row_pitch;
-    size_t      slice_pitch;
-} PLImageArrayBuffer;
-
-typedef struct PLPointGridBuffer_s {
-    cl_mem      grid;
-    size_t      width;
-    size_t      height;
-} PLPointGridBuffer;
