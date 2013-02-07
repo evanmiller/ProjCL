@@ -11,6 +11,7 @@
 #include <proj_api.h>
 #endif
 
+#define RAD_TO_DEG   57.29577951308232
 #define TEST_POINTS 1000
 #define TOL 1.e-5
 
