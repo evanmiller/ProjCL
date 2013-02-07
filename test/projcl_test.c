@@ -6,6 +6,7 @@
 #include <OpenCL/OpenCL.h>
 #include <sys/time.h>
 #include "../src/projcl.h"
+#include "../src/projcl_warp.h"
 
 #ifdef HAVE_PROJ4
 #include <proj_api.h>
