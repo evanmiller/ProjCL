@@ -15,7 +15,7 @@ functioning Winkel Tripel inverse projection.
 All of the routines are single-precision, since that gets you about 1m accuracy,
 which is more than what I needed for Magic Maps. Double-precision should
 probably be implemented at some point, but that will be painful as OpenCL
-compilers tend to have half-assed double-precision support.
+compilers tend to have half-assed support for double-precision.
 
 The API differs from Proj.4 in that each projection gets its own pair of
 functions (one forward, one inverse) with arguments only for the parameters
@@ -210,3 +210,6 @@ Some tips on writing OpenCL routines:
 * Use "any" and "all" for break conditions
 * Use "select" or the ternary operator for conditional assignments
 * Use "sincos" if you need the sine and cosine of the same angle
+* If you're on a Mac, get used to bisecting your code to find compilation
+  errors. Apple's OpenCL implementation is a low-point in the history of
+  compilers.
