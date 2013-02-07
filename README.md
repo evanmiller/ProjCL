@@ -196,13 +196,13 @@ Adding a Map Projection
 It's relatively straightforward to add a map projection to ProjCL. You just
 need to...
 
-1. Create a file kernel/pl_project_<name>.opencl in kernel/ with the projection routines
+1. Create a file kernel/pl_project_&lt;name&gt;.opencl in kernel/ with the projection routines
 
-2. Create a pl_enqueue_kernel_<name> function in src/projcl_run.c
+2. Create a pl_enqueue_kernel_&lt;name&gt; function in src/projcl_run.c
 
-3. Create pl_project_<name> and pl_unproject_<name> functions in src/projcl_project.c
+3. Create pl_project_&lt;name&gt; and pl_unproject_&lt;name&gt; functions in src/projcl_project.c
 
-4. Add pl_project_<name> and pl_unproject_<name> prototypes to src/projcl.h
+4. Add pl_project_&lt;name&gt; and pl_unproject_&lt;name&gt; prototypes to src/projcl.h
 
 5. Add tests to test/projcl_test.c
 
