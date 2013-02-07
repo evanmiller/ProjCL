@@ -21,9 +21,8 @@ compilers tend to have half-assed support for double-precision.
 
 The API differs from Proj.4 in that each projection gets its own pair of
 functions (one forward, one inverse) with arguments only for the parameters
-that apply to that projection. Text-based APIs like Proj.4's are stupid and
-error-prone, and anyone who implements one thinking it's "clever" and
-"flexible" should have their C compiler taken away.
+that apply to that projection. Text-based C APIs like Proj.4's are prone to
+error in my experience.
 
 A test suite covers the projection routines, and if you run it you will notice
 that there are flaws in the Transverse Mercator algorithms. Charles Karney has
