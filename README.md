@@ -6,7 +6,8 @@ computations, including map projection, geodesic (distance) calculations, and
 datum conversion. For projection calculations it is several times faster than
 Proj.4 on the CPU, and could be even faster on a GPU for large batches but I
 haven't actually done much GPU performance testing. For datum shifts ProjCL
-is smarter than Proj.4 because it does some matrix math in advance.
+is smarter than Proj.4 because it does some matrix math in advance, and generally
+faster because OpenCL can utilize all cores and the CPU's vector capabilities.
 
 Most projection routines were originally adapted from Proj.4 code, with
 branches replaced with select() statements and various tweaks implemented along
