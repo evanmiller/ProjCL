@@ -6,7 +6,7 @@
 //  Copyright 2011 __MyCompanyName__. All rights reserved.
 //
 
-#include "projcl.h"
+#import <projcl/projcl.h>
 #include "projcl_run.h"
 #include "projcl_util.h"
 #include <stdlib.h>
