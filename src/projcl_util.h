@@ -7,7 +7,7 @@
 //
 
 #import <OpenCL/OpenCL.h>
-#import "projcl_types.h"
+#import <projcl/projcl_types.h>
 
 int _pl_spheroid_is_spherical(PLSpheroid ell);
 cl_kernel _pl_find_kernel(PLContext *pl_ctx, const char *requested_name);
