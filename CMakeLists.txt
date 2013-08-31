@@ -159,7 +159,8 @@ endif(APPLE)
 
 
 
-set(WITH_PROJ FALSE CACHE BOOL "Choose if GDAL support should be built")
+set(WITH_PROJ FALSE CACHE BOOL "Choose if Proj support should be built")
+set(PROJCL_LIBRARY projcl)
 
 find_package(Proj4 4.8.0)
 set(PROJCL_HAVE_PROJ 1)
@@ -171,31 +172,10 @@ find_package(OpenCL)
 find_package(Blas)
 
 
+set(PROJCL_DEPENDENT_LIBRARIES ${OPENCL_LIBRARIES} ${PROJ4_LIBRARIES} ${BLAS_LIBRARIES})
 add_subdirectory(src)
 
-if(WITH_TESTS)
-  message(STATUS "Building with PDAL unit tests")
-  enable_testing()
-
-  if(ENABLE_CTEST)
-    message(STATUS
-      "Enable CTest to support submissions of results to CDash at http://cdash.org")
-    cmake_minimum_required(VERSION 2.8.0)
-    # Dashboard has been prepared for experiments
-    # http://my.cdash.org/index.php?project=PDAL
-    include(CTest)
-    message(STATUS
-      "Enable CTest to support submissions of results to CDash at http://cdash.org - done")
-  endif()
-
-  add_subdirectory(test)
-else()
-  if(ENABLE_CTEST)
-    message(WARNING
-      "CTest support requested but WITH_TESTS option not specified to build of PDAL unit tests")
-  endif()
-endif()
-
+add_subdirectory(test)
 
 
 

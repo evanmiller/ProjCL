@@ -9,7 +9,7 @@
 
 
 #import <projcl/projcl.h>
-#include "projcl_warp.h"
+#include <projcl/projcl_warp.h>
 
 #include <dirent.h>
 #include <stdlib.h>
