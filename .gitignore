@@ -5,5 +5,7 @@ CTestTestfile.cmake
 Makefile
 cmake_install.cmake
 *.dylib
+Testing
 
+test/projcl_test
 obj/
