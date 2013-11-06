@@ -1,11 +1,11 @@
 
-CC=gcc
+CC=clang
 
 .PHONY: test
 
 all:
 	@mkdir -p obj
-	$(CC) src/*.c -dynamiclib -o obj/libprojcl.dylib -framework Accelerate -framework OpenCL -Wall -Werror
+	$(CC) src/*.c -Iinclude -dynamiclib -o obj/libprojcl.dylib -framework Accelerate -framework OpenCL -Wno-deprecated-declarations -Wall -Werror
 
 test:
 	@mkdir -p obj

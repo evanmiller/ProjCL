@@ -119,6 +119,12 @@ static test_params_t lambert_conformal_conic_tests[] = {
     .lat0 = 10.0,
     .rlat1 = 30.0,
     .rlat2 = 60.0 },
+  { .name = "Spherical, symmetric standard parallels",
+    .ell = PL_SPHEROID_SPHERE,
+    .lon0 = 0.0,
+    .lat0 = 0.0,
+    .rlat1 = -30.0,
+    .rlat2 = 30.0 },
   { .name = "Ellipsoidal, centered",
     .ell = PL_SPHEROID_WGS_84,
     .lon0 = 0.0,
@@ -130,7 +136,13 @@ static test_params_t lambert_conformal_conic_tests[] = {
     .lon0 = 10.0,
     .lat0 = 10.0,
     .rlat1 = 30.0,
-    .rlat2 = 60.0 }
+    .rlat2 = 60.0 },
+  { .name = "Ellipsoidal, symmetric standard parallels",
+    .ell = PL_SPHEROID_WGS_84,
+    .lon0 = 0.0,
+    .lat0 = 0.0,
+    .rlat1 = -30.0,
+    .rlat2 = 30.0 },
 };
 
 static test_params_t mercator_tests[] = {

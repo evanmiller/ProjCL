@@ -7,12 +7,9 @@
 //
 
 #include "projcl_util.h"
+#include "projcl_spheroid.h"
 #include <strings.h>
 #include <stdio.h>
-
-int _pl_spheroid_is_spherical(PLSpheroid ell) {
-    return ell == PL_SPHEROID_SPHERE || ell == PL_SPHEROID_WGS_84_MAJOR_AUXILIARY_SPHERE;
-}
 
 cl_kernel _pl_find_kernel(PLContext *pl_ctx, const char *requested_name) {
 	char buf[128];

@@ -54,6 +54,11 @@ typedef enum PLSpheroid {
     PL_SPHEROID_INTERNATIONAL_1924
 } PLSpheroid;
 
+struct pl_spheroid_info_s {
+    double major_axis;
+    double minor_axis;
+};
+
 #define PL_MODULE_DATUM                         (1 << 1)
 #define PL_MODULE_GEODESIC                      (1 << 2)
 #define PL_MODULE_WARP                          (1 << 3)

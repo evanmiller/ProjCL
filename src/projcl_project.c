@@ -9,7 +9,11 @@
 #import <projcl/projcl.h>
 #include "projcl_run.h"
 #include "projcl_util.h"
+#include "projcl_spheroid.h"
 #include <stdlib.h>
+#include <math.h>
+
+#define DEG_TO_RAD	.0174532925199432958
 
 PLProjectionBuffer *pl_load_projection_data(PLContext *pl_ctx, const float *xy, int count, int copy, int *outError) {
 	float *xy_pad = NULL;
@@ -165,6 +169,15 @@ cl_int pl_unproject_lambert_azimuthal_equal_area(PLContext *pl_ctx, PLProjection
 cl_int pl_project_lambert_conformal_conic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
                                           PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
                                           float rlat1, float rlat2) {
+    if (fabs((rlat1 + rlat2) * DEG_TO_RAD) < 1.e-7) {
+        /* With symmetrical standard parallels the LCC equations break down.
+         * But, in this case it reduces to a Mercator projection with an appropriate shift. */
+        double cosphi1 = cos(rlat1 * DEG_TO_RAD);
+        PLSpheroidInfo info = _pl_get_spheroid_info(pl_ell);
+        return pl_project_mercator(pl_ctx, pl_buf, xy_out, pl_ell, scale*cosphi1,
+                                   x0-scale*info.major_axis*cosphi1*lon0*DEG_TO_RAD,
+                                   y0-scale*info.major_axis*cosphi1*log(tan(0.5*lat0*DEG_TO_RAD+M_PI_4)));
+    }
     cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "lambert_conformal_conic", 1, pl_ell);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
@@ -180,6 +193,13 @@ cl_int pl_project_lambert_conformal_conic(PLContext *pl_ctx, PLProjectionBuffer 
 cl_int pl_unproject_lambert_conformal_conic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
                                             PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
                                             float rlat1, float rlat2) {
+    if (fabs((rlat1 + rlat2) * DEG_TO_RAD) < 1.e-7) {
+        double cosphi1 = cos(rlat1 * DEG_TO_RAD);
+        PLSpheroidInfo info = _pl_get_spheroid_info(pl_ell);
+        return pl_unproject_mercator(pl_ctx, pl_buf, xy_out, pl_ell, scale*cosphi1,
+                                   x0-scale*info.major_axis*cosphi1*lon0*DEG_TO_RAD,
+                                   y0-scale*info.major_axis*cosphi1*log(tan(0.5*lat0*DEG_TO_RAD+M_PI_4)));
+    }
     cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "lambert_conformal_conic", 0, pl_ell);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;

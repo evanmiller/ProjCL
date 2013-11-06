@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "projcl_run.h"
 #include "projcl_util.h"
+#include "projcl_spheroid.h"
 
 PLForwardGeodesicFixedDistanceBuffer *pl_load_forward_geodesic_fixed_distance_data(PLContext *pl_ctx,
     const float *xy_in, int xy_count, const float *az_in, int az_count, cl_int *outError)
