@@ -45,6 +45,14 @@ Available projections:
 
 Available datums and spheroids: see src/projcl_types.h
 
+Building
+--
+
+ProjCL requires [CMake](http://www.cmake.org) build system. To build the library do:
+
+	$cmake CMakeLists.txt
+	$make	
+
 Setup
 --
 
