@@ -13,6 +13,8 @@ set(PROJCL_C
   projcl_project.c
   projcl_run.c
   projcl_run.h
+  projcl_spheroid.c
+  projcl_spheroid.h
   projcl_util.c
   projcl_util.h
   projcl_warp.c

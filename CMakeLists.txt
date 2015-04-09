@@ -163,8 +163,10 @@ set(WITH_PROJ FALSE CACHE BOOL "Choose if Proj support should be built")
 set(PROJCL_LIBRARY projcl)
 
 find_package(Proj4 4.8.0)
-set(PROJCL_HAVE_PROJ 1)
-add_definitions(-DHAVE_PROJ4)
+if (PROJ4_FOUND)
+	set(PROJCL_HAVE_PROJ 1)
+	add_definitions(-DHAVE_PROJ4)
+endif (PROJ4_FOUND)	
 
 include_directories(${PROJ_INCLUDE_DIR})
 
