@@ -7,7 +7,7 @@
  *
  */
 
-#import <OpenCL/OpenCL.h>
+#import <OpenCL/opencl.h>
 #import <projcl/projcl_types.h>
 
 cl_int pl_read_buffer(cl_command_queue queue, cl_mem xy_out_buf, float *xy_out, size_t out_count);

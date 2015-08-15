@@ -7,7 +7,7 @@
  *
  */
 
-#import <OpenCL/OpenCL.h>
+#import <OpenCL/opencl.h>
 
 #import "projcl_types.h"
 
