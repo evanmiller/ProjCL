@@ -6,7 +6,7 @@
 //  Copyright 2011 __MyCompanyName__. All rights reserved.
 //
 
-#import <OpenCL/OpenCL.h>
+#import <OpenCL/opencl.h>
 #import <projcl/projcl_types.h>
 
 cl_kernel _pl_find_kernel(PLContext *pl_ctx, const char *requested_name);

@@ -1,5 +1,5 @@
 
-#import <OpenCL/OpenCL.h>
+#import <OpenCL/opencl.h>
 #import <projcl/projcl_types.h>
 
 int _pl_spheroid_is_spherical(PLSpheroid ell);

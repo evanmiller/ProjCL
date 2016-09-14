@@ -745,17 +745,15 @@ cl_int pl_run_kernel_transform_cartesian(cl_kernel transform_kernel, PLContext *
         return info;
     }
     
-    char no_transpose = 'N';
-    
     __CLPK_real alpha = 1.f;
     __CLPK_real beta = 0.f;
     __CLPK_real result_matrix[4][4];
     
     /* Multiply the source matrix with the inverse destination matrix */
-    SGEMM(&no_transpose, &no_transpose, &n, &n, &n, &alpha,
-          &matrix2.elements[0][0], &n,
-          &matrix1.elements[0][0], &n,
-          &beta, &result_matrix[0][0], &n);
+    cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, alpha,
+          &matrix2.elements[0][0], n,
+          &matrix1.elements[0][0], n,
+          beta, &result_matrix[0][0], n);
     
     /* transpose the result */
     float tmatrix[4][4];
