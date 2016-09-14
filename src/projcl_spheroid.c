@@ -24,6 +24,7 @@ static struct pl_spheroid_info_s pl_spheroid_params[] = {
     { 6377340.189, 6356034.448 }, /* Modified Airy */
     { 6377397.155, 6356078.963 }, /* Bessel 1841 */
     { 6378206.4,   6356583.8 }, /* Clarke 1866 */
+    { 6378249.145, 6356514.870 }, /* Clarke 1880 (RGS) */
     { 6378160.0,   6356774.7192 }, /* GRS 1967 */
     { 6378137.0, 6378137.0 }, /* WGS 84 Major Auxiliary */
     { 6378388.0, 6356911.9 } /* Hayford / International 1924 */
