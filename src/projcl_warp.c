@@ -36,20 +36,25 @@ PLImageArrayBuffer *pl_load_image_array(PLContext *pl_ctx,
         return NULL;
     }
     
-    buf->width = width;
-    buf->height = height;
-    buf->depth = tiles_across * tiles_down;
     buf->tiles_across = tiles_across;
     buf->tiles_down = tiles_down;
-    buf->row_pitch = row_pitch;
-    buf->slice_pitch = slice_pitch;
-    cl_image_format image_format;
+
+    cl_image_format image_format = {0};
     image_format.image_channel_data_type = channel_type;
     image_format.image_channel_order = channel_order;
+
+    cl_image_desc image_desc = {0};
+    image_desc.image_type = CL_MEM_OBJECT_IMAGE3D;
+    image_desc.image_width = width;
+    image_desc.image_height = height;
+    image_desc.image_depth = tiles_across * tiles_down;
+    image_desc.image_row_pitch = row_pitch;
+    image_desc.image_slice_pitch = slice_pitch;
+
     buf->image_format = image_format;
-    buf->image = clCreateImage3D(pl_ctx->ctx, CL_MEM_READ_ONLY | (do_copy ? CL_MEM_COPY_HOST_PTR : CL_MEM_USE_HOST_PTR),
-                                 &buf->image_format, buf->width, buf->height, buf->depth, 
-                                 buf->row_pitch, buf->slice_pitch, (void *)pvData, &error);
+    buf->image_desc = image_desc;
+    buf->image = clCreateImage(pl_ctx->ctx, CL_MEM_READ_ONLY | (do_copy ? CL_MEM_COPY_HOST_PTR : CL_MEM_USE_HOST_PTR),
+            &buf->image_format, &buf->image_desc, (void *)pvData, &error);
     
     if (buf->image == NULL) {
         free(buf);
@@ -84,15 +89,20 @@ PLImageBuffer *pl_load_image(PLContext *pl_ctx,
         return NULL;
     }
     
-    buf->width = width;
-    buf->height = height;
-    buf->row_pitch = row_pitch;
-    cl_image_format image_format;
+    cl_image_format image_format = {0};
     image_format.image_channel_data_type = channel_type;
     image_format.image_channel_order = channel_order;
+
+    cl_image_desc image_desc = {0};
+    image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+    image_desc.image_width = width;
+    image_desc.image_height = height;
+    image_desc.image_row_pitch =  row_pitch;
+
     buf->image_format = image_format;
-    buf->image = clCreateImage2D(pl_ctx->ctx, CL_MEM_READ_ONLY | (do_copy ? CL_MEM_COPY_HOST_PTR : CL_MEM_USE_HOST_PTR),
-                                 &buf->image_format, buf->width, buf->height, buf->row_pitch, (void *)pvData, &error);
+    buf->image_desc = image_desc;
+    buf->image = clCreateImage(pl_ctx->ctx, CL_MEM_READ_ONLY | (do_copy ? CL_MEM_COPY_HOST_PTR : CL_MEM_USE_HOST_PTR),
+            &buf->image_format, &buf->image_desc, (void *)pvData, &error);
     
     if (buf->image == NULL) {
         free(buf);
@@ -488,8 +498,14 @@ cl_int pl_unproject_grid_winkel_tripel(PLContext *pl_ctx, PLPointGridBuffer *src
 cl_int pl_sample_image(PLContext *pl_ctx, PLPointGridBuffer *grid, PLImageBuffer *buf, PLImageFilter filter,
                               unsigned char *outData) {
     cl_int error = CL_SUCCESS;
-    cl_mem out_image = clCreateImage2D(pl_ctx->ctx, CL_MEM_WRITE_ONLY, &buf->image_format, 
-                                       grid->width, grid->height, 0, NULL, &error);
+
+    cl_image_desc image_desc = {0};
+    image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+    image_desc.image_width = grid->width;
+    image_desc.image_height = grid->height;
+
+    cl_mem out_image = clCreateImage(pl_ctx->ctx, CL_MEM_WRITE_ONLY, &buf->image_format, 
+            &image_desc, NULL, &error);
     if (out_image == NULL) {
         return error;
     }
@@ -545,8 +561,13 @@ cl_int pl_sample_image(PLContext *pl_ctx, PLPointGridBuffer *grid, PLImageBuffer
 cl_int pl_sample_image_array(PLContext *pl_ctx, PLPointGridBuffer *grid, PLImageArrayBuffer *buf, PLImageFilter filter,
                                     unsigned char *outData) {
     cl_int error = CL_SUCCESS;
-    cl_mem out_image = clCreateImage2D(pl_ctx->ctx, CL_MEM_WRITE_ONLY, &buf->image_format, 
-                                       grid->width, grid->height, 0, NULL, &error);
+
+    cl_image_desc image_desc = {0};
+    image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+    image_desc.image_width = grid->width;
+    image_desc.image_height = grid->height;
+
+    cl_mem out_image = clCreateImage(pl_ctx->ctx, CL_MEM_WRITE_ONLY, &buf->image_format, &image_desc, NULL, &error);
     if (out_image == NULL) {
         return error;
     }

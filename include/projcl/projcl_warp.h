@@ -16,21 +16,15 @@ typedef enum PLImageFilter {
 typedef struct PLImageBuffer_s {
     cl_mem      image;
     cl_image_format image_format;
-    size_t      width;
-    size_t      height;
-    size_t      row_pitch;
+    cl_image_desc   image_desc;
 } PLImageBuffer;
 
 typedef struct PLImageArrayBuffer_s {
     cl_mem      image;
     cl_image_format image_format;
-    size_t      width;
-    size_t      height;
-    size_t      depth;
+    cl_image_desc   image_desc;
     size_t      tiles_across;
     size_t      tiles_down;
-    size_t      row_pitch;
-    size_t      slice_pitch;
 } PLImageArrayBuffer;
 
 typedef struct PLPointGridBuffer_s {
