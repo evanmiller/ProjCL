@@ -417,6 +417,28 @@ cl_int pl_unproject_grid_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLP
     return retval;
 }
 
+cl_int pl_project_grid_oblique_stereographic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
+        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "oblique_stereographic", 1, pl_ell);
+    if (kernel == NULL) {
+        return CL_INVALID_KERNEL_NAME;
+    }
+    
+    return pl_enqueue_kernel_oblique_stereographic(kernel, pl_ctx, src->grid, dst->grid,
+            src->width * src->height, pl_ell, scale, x0, y0, lon0, lat0);
+}
+
+cl_int pl_unproject_grid_oblique_stereographic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
+        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "oblique_stereographic", 0, pl_ell);
+    if (kernel == NULL) {
+        return CL_INVALID_KERNEL_NAME;
+    }
+    
+    return pl_enqueue_kernel_oblique_stereographic(kernel, pl_ctx, src->grid, dst->grid,
+            src->width * src->height, pl_ell, scale, x0, y0, lon0, lat0);
+}
+
 cl_int pl_project_grid_robinson(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
         float scale, float x0, float y0) {
     cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "robinson", 1, PL_SPHEROID_SPHERE);

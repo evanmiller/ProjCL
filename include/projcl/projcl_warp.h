@@ -94,6 +94,10 @@ cl_int pl_project_grid_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPoi
                                 PLSpheroid pl_ell, float scale, float x0, float y0);
 cl_int pl_unproject_grid_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
                                   PLSpheroid pl_ell, float scale, float x0, float y0);
+cl_int pl_project_grid_oblique_stereographic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
+        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
+cl_int pl_unproject_grid_oblique_stereographic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
+        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
 cl_int pl_project_grid_robinson(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
         float scale, float x0, float y0);
 cl_int pl_unproject_grid_robinson(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
