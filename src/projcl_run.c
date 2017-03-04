@@ -202,7 +202,7 @@ cl_int pl_read_buffer(cl_command_queue queue, cl_mem xy_out_buf, float *xy_out, 
 cl_int pl_enqueue_kernel_albers_equal_area(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy_in, cl_mem xy_out, size_t count,
 									   PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
                                        float rlat1, float rlat2) {
-	cl_int error;
+	cl_int error = CL_SUCCESS;
 	cl_int argc = 0;
 	size_t vec_count = ck_padding(count, PL_FLOAT_VECTOR_SIZE) / PL_FLOAT_VECTOR_SIZE;
 	PLSpheroidInfo info = _pl_get_spheroid_info(pl_ell);
@@ -427,6 +427,57 @@ cl_int pl_enqueue_kernel_mercator(cl_kernel kernel, PLContext *pl_ctx,
 	if (error != CL_SUCCESS) {
 		return error;
 	}
+	return _pl_enqueue_kernel_1d(pl_ctx->queue, kernel, vec_count);
+}
+
+cl_int pl_enqueue_kernel_oblique_stereographic(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy_in, cl_mem xy_out, size_t count,
+        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+	cl_int error = CL_SUCCESS;
+	cl_int argc = 0;
+	size_t vec_count = ck_padding(count, PL_FLOAT_VECTOR_SIZE) / PL_FLOAT_VECTOR_SIZE;
+	PLSpheroidInfo info = _pl_get_spheroid_info(pl_ell);
+
+	error = _pl_set_kernel_args(kernel, xy_in, xy_out, count, &info, &argc);
+
+    float lambda0 = lon0 * DEG_TO_RAD;
+    double phi0 = lat0 * DEG_TO_RAD;
+
+    double sinPhi0, cosPhi0;
+    sinPhi0 = sin(phi0);
+    cosPhi0 = cos(phi0);
+
+    float sinPhiC0, cosPhiC0;
+    float scale_r2 = 2.0 * scale * info.major_axis * sqrt(info.one_ecc2) / (1.0 - info.ecc2 * sinPhi0 * sinPhi0);
+
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &scale_r2);
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &x0);
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &y0);
+
+	if (!_pl_spheroid_is_spherical(pl_ell)) {
+        double c0 = sqrt(1.0 + info.ecc2 * cosPhi0 * cosPhi0 * cosPhi0 * cosPhi0 / info.one_ecc2);
+        double phiC0 = asin(sinPhi0 / c0);
+        sinPhiC0 = sin(phiC0);
+        cosPhiC0 = cos(phiC0);
+
+        double k0 = tan(0.5 * phiC0 + M_PI_4) / (
+                pow(tan(0.5 * phi0 + M_PI_4), c0) *
+                pow((1.-info.ecc * sinPhi0)/(1.+info.ecc*sinPhi0), 0.5 * c0 * info.ecc) );
+
+        float c0_f = c0;
+        float k0_f = k0;
+		error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &c0_f);
+		error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &k0_f);
+	} else {
+        sinPhiC0 = sinPhi0;
+        cosPhiC0 = cosPhi0;
+    }
+
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &lambda0);
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &sinPhiC0);
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &cosPhiC0);
+	if (error != CL_SUCCESS)
+		return error;
+	
 	return _pl_enqueue_kernel_1d(pl_ctx->queue, kernel, vec_count);
 }
 

@@ -174,6 +174,8 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
                 continue;
             if (strcmp(name, "pl_project_mercator.opencl") == 0 && !(modules & PL_MODULE_MERCATOR))
                 continue;
+            if (strcmp(name, "pl_project_oblique_stereographic.opencl") == 0 && !(modules & PL_MODULE_OBLIQUE_STEREOGRAPHIC))
+                continue;
             if (strcmp(name, "pl_project_robinson.opencl") == 0 && !(modules & PL_MODULE_ROBINSON))
                 continue;
             if (strcmp(name, "pl_project_transverse_mercator.opencl") == 0 && !(modules & PL_MODULE_TRANSVERSE_MERCATOR))

@@ -68,9 +68,10 @@ struct pl_spheroid_info_s {
 #define PL_MODULE_LAMBERT_AZIMUTHAL_EQUAL_AREA  (1 << 6)
 #define PL_MODULE_LAMBERT_CONFORMAL_CONIC       (1 << 7)
 #define PL_MODULE_MERCATOR                      (1 << 8)
-#define PL_MODULE_ROBINSON                      (1 << 9)
-#define PL_MODULE_TRANSVERSE_MERCATOR           (1 << 10)
-#define PL_MODULE_WINKEL_TRIPEL                 (1 << 11)
+#define PL_MODULE_OBLIQUE_STEREOGRAPHIC         (1 << 9)
+#define PL_MODULE_ROBINSON                      (1 << 10)
+#define PL_MODULE_TRANSVERSE_MERCATOR           (1 << 11)
+#define PL_MODULE_WINKEL_TRIPEL                 (1 << 12)
 
 #define PL_MODULE_PROJECTION                    (0xFFFF - 7)
 

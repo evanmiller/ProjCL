@@ -240,6 +240,34 @@ cl_int pl_unproject_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, floa
     return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
 }
 
+cl_int pl_project_oblique_stereographic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
+        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "oblique_stereographic", 1, pl_ell);
+	if (kernel == NULL)
+		return CL_INVALID_KERNEL_NAME;
+	
+	cl_int error = pl_enqueue_kernel_oblique_stereographic(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
+            pl_ell, scale, x0, y0, lon0, lat0);
+    if (error != CL_SUCCESS)
+        return error;
+    
+    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+}
+
+cl_int pl_unproject_oblique_stereographic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
+        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "oblique_stereographic", 0, pl_ell);
+	if (kernel == NULL)
+		return CL_INVALID_KERNEL_NAME;
+	
+	cl_int error = pl_enqueue_kernel_oblique_stereographic(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
+            pl_ell, scale, x0, y0, lon0, lat0);
+    if (error != CL_SUCCESS)
+        return error;
+    
+    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+}
+
 cl_int pl_project_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
         float scale, float x0, float y0) {
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "robinson", 1, PL_SPHEROID_SPHERE);

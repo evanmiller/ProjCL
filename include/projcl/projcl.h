@@ -56,6 +56,10 @@ cl_int pl_project_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float 
     PLSpheroid pl_ell, float scale, float x0, float y0);
 cl_int pl_unproject_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
     PLSpheroid pl_ell, float scale, float x0, float y0);
+cl_int pl_project_oblique_stereographic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
+    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
+cl_int pl_unproject_oblique_stereographic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
+    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
 cl_int pl_project_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
         float scale, float x0, float y0);
 cl_int pl_unproject_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,

@@ -3,7 +3,7 @@
 #include <math.h>
 #include <string.h>
 
-#include <OpenCL/OpenCL.h>
+#include <OpenCL/opencl.h>
 #include <sys/time.h>
 #include <projcl/projcl.h>
 #include <projcl/projcl_warp.h>
@@ -12,7 +12,10 @@
 #include <proj_api.h>
 #endif
 
+#ifndef RAD_TO_DEG
 #define RAD_TO_DEG   57.29577951308232
+#endif
+
 #define TEST_POINTS 1000
 #define TOL 1.e-5
 
@@ -119,12 +122,14 @@ static test_params_t lambert_conformal_conic_tests[] = {
     .lat0 = 10.0,
     .rlat1 = 30.0,
     .rlat2 = 60.0 },
+#ifndef HAVE_PROJ4
   { .name = "Spherical, symmetric standard parallels",
     .ell = PL_SPHEROID_SPHERE,
     .lon0 = 0.0,
     .lat0 = 0.0,
     .rlat1 = -30.0,
     .rlat2 = 30.0 },
+#endif
   { .name = "Ellipsoidal, centered",
     .ell = PL_SPHEROID_WGS_84,
     .lon0 = 0.0,
@@ -137,12 +142,14 @@ static test_params_t lambert_conformal_conic_tests[] = {
     .lat0 = 10.0,
     .rlat1 = 30.0,
     .rlat2 = 60.0 },
+#ifndef HAVE_PROJ4
   { .name = "Ellipsoidal, symmetric standard parallels",
     .ell = PL_SPHEROID_WGS_84,
     .lon0 = 0.0,
     .lat0 = 0.0,
     .rlat1 = -30.0,
     .rlat2 = 30.0 },
+#endif
 };
 
 static test_params_t mercator_tests[] = {
@@ -158,6 +165,23 @@ static test_params_t mercator_tests[] = {
     .lat0 = NAN,
     .rlat1 = NAN,
     .rlat2 = NAN }
+};
+
+static test_params_t oblique_stereographic_tests[] = {
+  { .name = "Ellipsoidal, centered",
+      .ell = PL_SPHEROID_WGS_84,
+      .lon0 = 0.0,
+      .lat0 = 0.0,
+      .rlat1 = NAN,
+      .rlat2 = NAN
+  },
+  { .name = "Ellipsoidal, off-center",
+      .ell = PL_SPHEROID_WGS_84,
+      .lon0 = 10.0,
+      .lat0 = 10.0,
+      .rlat1 = NAN,
+      .rlat2 = NAN
+  }
 };
 
 static test_params_t robinson_tests[] = {
@@ -218,6 +242,7 @@ int test_american_polyconic(PLContext *ctx, PLProjectionBuffer *orig_buf, float 
 int test_lambert_azimuthal_equal_area(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 int test_lambert_conformal_conic(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 int test_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
+int test_oblique_stereographic(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 int test_robinson(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 int test_transverse_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 int test_winkel_tripel(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
@@ -238,17 +263,19 @@ int compare_proj4_inv(float *proj_points, float *orig_points, char *desc1, char 
 
     if ((pj_in = pj_init_plus(desc1)) == NULL) {
       printf("Failed to init Proj.4 input structure: %s\n", desc1);
+      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
       exit(1);
     }
 
     if ((pj_out = pj_init_plus(desc2)) == NULL) {
       printf("Failed to init Proj.4 output structure: %s\n", desc2);
+      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
       exit(1);
     }
 
     error = pj_transform(pj_in, pj_out, TEST_POINTS, 2, points_proj4, points_proj4 + 1, NULL);
     if (error != 0) {
-      printf("Error projecting: %d\n", error);
+      printf("Error projecting: %s\n", pj_strerrno(error));
       exit(1);
     }
 
@@ -282,17 +309,19 @@ int compare_proj4_fwd(float *orig_points, float *proj_points, char *desc1, char 
 
     if ((pj_in = pj_init_plus(desc1)) == NULL) {
       printf("Failed to init Proj.4 input structure: %s\n", desc1);
+      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
       exit(1);
     }
 
     if ((pj_out = pj_init_plus(desc2)) == NULL) {
       printf("Failed to init Proj.4 output structure: %s\n", desc2);
+      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
       exit(1);
     }
 
     error = pj_transform(pj_in, pj_out, TEST_POINTS, 2, points_proj4, points_proj4 + 1, NULL);
     if (error != 0) {
-      printf("Error projecting: %d\n", error);
+      printf("Error projecting: %s\n", pj_strerrno(error));
       exit(1);
     }
 
@@ -480,6 +509,41 @@ int test_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_poin
     return consistency_failures;
 }
 
+int test_oblique_stereographic(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
+    int error = CL_SUCCESS;
+    int consistency_failures = 0;
+    PLProjectionBuffer *proj_buf = NULL;
+    float proj_points[2*TEST_POINTS];
+    float orig_points2[2*TEST_POINTS];
+    int i;
+    char orig_string[80];
+    char proj_string[80];
+
+    for (i=0; i<sizeof(oblique_stereographic_tests)/sizeof(test_params_t); i++) {
+        test_params_t test = oblique_stereographic_tests[i];
+        error = pl_project_oblique_stereographic(ctx, orig_buf, proj_points, 
+              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
+        if (error != CL_SUCCESS) {
+            printf("Error projecting Oblique Stereographic: %d\n", error);
+        }
+        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
+        error = pl_unproject_oblique_stereographic(ctx, proj_buf, orig_points2, 
+                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
+        if (error != CL_SUCCESS) {
+            printf("Error unprojecting Oblique Stereographic: %d\n", error);
+        }
+        pl_unload_projection_data(proj_buf);
+
+        consistency_failures += compare_points(orig_points, orig_points2, 
+                TEST_POINTS, test.name);
+        sprintf_proj4(orig_string, "latlong", test);
+        sprintf_proj4(proj_string, "sterea", test);
+        consistency_failures += compare_proj4_fwd(orig_points, proj_points, orig_string, proj_string);
+    }
+
+    return consistency_failures;
+}
+
 int test_robinson(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
     int error = CL_SUCCESS;
     int consistency_failures = 0;
@@ -638,6 +702,7 @@ int main(int argc, char **argv) {
     failures += compile_module(ctx, PL_MODULE_LAMBERT_AZIMUTHAL_EQUAL_AREA, "Lambert Azimuthal Equal Area");
     failures += compile_module(ctx, PL_MODULE_LAMBERT_CONFORMAL_CONIC, "Lambert Conformal Conic");
     failures += compile_module(ctx, PL_MODULE_MERCATOR, "Mercator");
+    failures += compile_module(ctx, PL_MODULE_OBLIQUE_STEREOGRAPHIC, "Oblique Stereographic");
     failures += compile_module(ctx, PL_MODULE_ROBINSON, "Robinson");
     failures += compile_module(ctx, PL_MODULE_TRANSVERSE_MERCATOR, "Transverse Mercator");
     failures += compile_module(ctx, PL_MODULE_WINKEL_TRIPEL, "Winkel Tripel");
@@ -687,6 +752,9 @@ int main(int argc, char **argv) {
 
     printf("\nTesting consistency of Mercator\n");
     consistency_failures += test_mercator(ctx, orig_buf, orig_points);
+
+    printf("\nTesting consistency of Oblique Stereographic\n");
+    consistency_failures += test_oblique_stereographic(ctx, orig_buf, orig_points);
 
     printf("\nTesting consistency of Robinson\n");
     consistency_failures += test_robinson(ctx, orig_buf, orig_points);
