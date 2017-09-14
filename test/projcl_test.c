@@ -3,7 +3,13 @@
 #include <math.h>
 #include <string.h>
 
+#ifdef __APPLE__
 #include <OpenCL/opencl.h>
+#include <unistd.h>
+#else
+#include <CL/cl.h>
+#endif
+
 #include <sys/time.h>
 #include <projcl/projcl.h>
 #include <projcl/projcl_warp.h>
@@ -686,7 +692,12 @@ int compile_module(PLContext *ctx, unsigned int module, char *name) {
 int main(int argc, char **argv) {
     cl_int error = CL_SUCCESS;
     PLCode *code = NULL;
-    PLContext *ctx = pl_context_init(CL_DEVICE_TYPE_CPU, &error);
+    cl_device_type devtype = CL_DEVICE_TYPE_GPU;
+    if(argc > 1) {
+      if (!strcmp(argv[1], "-CPU"))
+	devtype = CL_DEVICE_TYPE_CPU;
+    }
+    PLContext *ctx = pl_context_init(devtype, &error);
     if (ctx == NULL) {
         printf("Failed to initialize context: %d\n", error);
         return 1;

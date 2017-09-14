@@ -17,7 +17,7 @@ float8 phi_sph2ell(float8 phi, float ecc, float k0, float c0) {
     do {
         phi = phi_ell;
         phi_ell = 2.f * atan(num * srat(ecc * sin(phi), -0.5f * ecc)) - M_PI_2F;
-    } while (any(fabs(phi_ell - phi)) > TOL7 && --i);
+    } while (any(fabs(phi_ell - phi) > TOL7) && --i);
 
     return phi_ell;
 }

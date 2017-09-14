@@ -13,7 +13,14 @@
 
 #include <math.h>
 #include <stdlib.h>
+#ifdef __APPLE__
 #include <Accelerate/Accelerate.h>
+#endif
+#ifdef __linux__
+#include "cblas.h"
+typedef int __CLPK_integer;
+typedef float __CLPK_real;
+#endif
 
 #define RAD_TO_DEG	57.29577951308232
 #define DEG_TO_RAD	.0174532925199432958
