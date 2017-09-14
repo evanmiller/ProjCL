@@ -1,13 +1,15 @@
 ProjCL: OpenCL-powered map projection and geodesic library
 ==
 
-ProjCL is a C interface to OpenCL routines that perform various geographic
-computations, including map projection, geodesic (distance) calculations, and
-datum conversion. For projection calculations it is several times faster than
-Proj.4 on the CPU, and could be even faster on a GPU for large batches but I
-haven't actually done much GPU performance testing. For datum shifts ProjCL
-is smarter than Proj.4 because it does some matrix math in advance, and generally
-faster because OpenCL can utilize all cores and the CPU's vector capabilities.
+ProjCL is a C interface to [OpenCL](https://en.wikipedia.org/wiki/OpenCL)
+routines that perform various geographic computations, including map
+projection, geodesic (distance) calculations, and datum conversion. For
+projection calculations it is several times faster than
+[Proj.4](http://proj4.org) on the CPU, and could be even faster on a GPU for
+large batches but I haven't actually done much GPU performance testing. For
+datum shifts ProjCL is smarter than Proj.4 because it does some matrix math in
+advance, and generally faster because OpenCL can utilize all cores and the
+CPU's vector capabilities.
 
 Most projection routines were originally adapted from Proj.4 code, with
 branches replaced with select() statements and various tweaks implemented along
@@ -15,9 +17,10 @@ the way. Unlike Proj.4, or any other project for that matter, ProjCL includes a
 functioning Winkel Tripel inverse projection.
 
 All of the routines are single-precision, since that gets you about 1m accuracy,
-which is more than what I needed for Magic Maps. Double-precision should
-probably be implemented at some point, but that will be painful as OpenCL
-compilers tend to have half-assed support for double-precision.
+which is more than what I needed for [Magic
+Maps](https://magicmaps.evanmiller.org/). Double-precision should probably be
+implemented at some point, but that will be painful as OpenCL compilers tend to
+have half-assed support for double-precision.
 
 The API differs from Proj.4 in that each projection gets its own pair of
 functions (one forward, one inverse) with arguments only for the parameters
@@ -26,9 +29,10 @@ error in my experience.
 
 A test suite covers the projection routines, and if you run it you will notice
 that there are flaws in the Transverse Mercator algorithms. Charles Karney has
-recently published new TM algorithms that would be nice to use here. It would
-also be nice to use his new geodesic algorithms, since at the moment ProjCL can
-only perform spherical distance calculations.
+recently [published](https://arxiv.org/pdf/1002.1417.pdf) new TM algorithms
+that would be nice to use here. It would also be nice to use his new geodesic
+algorithms, since at the moment ProjCL can only perform spherical distance
+calculations.
 
 ProjCL needs more map projections. In fact, the world needs more map projections.
 If you want to try your hand at one, check out "Adding a Map Projection" below.
