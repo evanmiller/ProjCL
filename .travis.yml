@@ -3,7 +3,7 @@ os:
     - osx
     - linux
 
-before_script:
+install:
     - if [ "$TRAVIS_OS_NAME" == "linux" ] ; then sudo apt-get install libblas-dev liblapack-dev ; fi
 
 script:

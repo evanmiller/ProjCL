@@ -1,3 +1,5 @@
+[![Travis CI build status](https://travis-ci.org/evanmiller/ProjCL.svg?branch=master)](https://travis-ci.org/evanmiller/ProjCL)
+
 ProjCL: OpenCL-powered map projection and geodesic library
 ==
 
