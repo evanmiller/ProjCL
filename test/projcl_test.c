@@ -783,5 +783,5 @@ int main(int argc, char **argv) {
     pl_unload_code(ctx);
     pl_context_free(ctx);
 
-    return 0;
+    return consistency_failures > 0;
 }

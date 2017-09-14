@@ -1,0 +1,9 @@
+language: c
+os:
+    - osx
+    - linux
+
+script:
+    - cmake .
+    - make
+    - ./test/projcl_test
