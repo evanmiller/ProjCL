@@ -4,7 +4,7 @@ os:
     - linux
 
 install:
-    - if [ "$TRAVIS_OS_NAME" == "linux" ] ; then sudo apt-get install libblas-dev liblapack-dev ; fi
+    - if [ "$TRAVIS_OS_NAME" == "linux" ] ; then sudo apt-get install libblas-dev liblapack-dev ocl-icd-opencl-dev ; fi
 
 script:
     - cmake .
