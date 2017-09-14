@@ -168,18 +168,28 @@ if (PROJ4_FOUND)
 	add_definitions(-DHAVE_PROJ4)
 endif (PROJ4_FOUND)	
 
-include_directories(${PROJ_INCLUDE_DIR})
-
 find_package(OpenCL)
-find_package(Blas)
+
+if (APPLE)
+   find_package(BLAS)
+elseif(WIN32)
+else()
+    # Regrettably necessary
+    set(CMAKE_FIND_LIBRARY_SUFFIXES .so.3 ${CMAKE_FIND_LIBRARY_SUFFIXES})
+
+    find_package(CBLAS REQUIRED)
+
+    # This also finds BLAS REQUIRED; both are needed on Linux
+    find_package(LAPACK REQUIRED)
+
+    set(RANDOM_LINUX_LIBRARIES m)
+endif()
 
 
-set(PROJCL_DEPENDENT_LIBRARIES ${OPENCL_LIBRARIES} ${PROJ4_LIBRARIES} ${BLAS_LIBRARIES})
+include_directories(${PROJ_INCLUDE_DIR} ${OPENCL_INCLUDE_DIRS} ${CBLAS_INCLUDE_DIR})
+
+set(PROJCL_DEPENDENT_LIBRARIES ${OPENCL_LIBRARIES} ${PROJ4_LIBRARIES} ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${CBLAS_LIBRARIES} ${RANDOM_LINUX_LIBRARIES}
+)
 add_subdirectory(src)
 
 add_subdirectory(test)
-
-
-
-
-

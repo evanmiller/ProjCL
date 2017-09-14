@@ -26,31 +26,58 @@
 #define PL_OPENCL_KERNEL_HEADER_FILE "peel.opencl"
 #define PL_OPENCL_KERNEL_FILE_PREFIX "pl_"
 
+int check_cl_error(cl_int error, cl_int *outError) {
+  if(error != CL_SUCCESS) {
+    if (outError != NULL) {
+      *outError = error;
+    }
+    return 1;
+  }
+  return 0;
+}
+
+#define PLATFORM_INDEX 0
+#define DEVICE_INDEX 0
+
 PLContext *pl_context_init(cl_device_type type, cl_int *outError) {
 	cl_int error;
-	cl_device_id device_id;
-	
-	error = clGetDeviceIDs(NULL, type, 1, &device_id, NULL);
-	if (error != CL_SUCCESS) {
-		if (outError != NULL)
-			*outError = error;
-		return NULL;
-	}
+
+	cl_uint num_platforms;
+	error = clGetPlatformIDs(0, NULL, &num_platforms);
+	if(check_cl_error(error, outError))
+	  return NULL;
+#if PL_DEBUG
+	printf("OpenCL num_platforms: %d\n", num_platforms);
+#endif
+
+	cl_platform_id platform_id[num_platforms];
+	error = clGetPlatformIDs(num_platforms, platform_id, NULL);
+	if(check_cl_error(error, outError))
+	  return NULL;
+
+	cl_context_properties context_properties[] = {CL_CONTEXT_PLATFORM, platform_id[PLATFORM_INDEX], NULL};
+
+	cl_uint num_devices;
+	error = clGetDeviceIDs(platform_id[PLATFORM_INDEX], type, NULL, NULL, &num_devices);
+	if(check_cl_error(error, outError))
+	  return NULL;
+#if PL_DEBUG
+	printf("OpenCL num_devices: %d\n", num_devices);
+#endif
+
+	cl_device_id device_id;	
+	error = clGetDeviceIDs(platform_id[PLATFORM_INDEX], type, num_devices, &device_id, NULL);
+	if(check_cl_error(error, outError))
+	  return NULL;
     
-	cl_context ctx = clCreateContext(0, 1, &device_id, NULL, NULL, &error);
-	if (error != CL_SUCCESS) {
-		if (outError != NULL)
-			*outError = error;
-		return NULL;
-	}
+	cl_context ctx = clCreateContext(NULL, 1, &device_id, NULL, NULL, &error);
+	if(check_cl_error(error, outError))
+	  return NULL;
 	
-	cl_command_queue queue = clCreateCommandQueue(ctx, device_id,
-												  0, &error);
-	if (error != CL_SUCCESS) {
-		clReleaseContext(ctx);
-		if (outError != NULL)
-			*outError = error;
-		return NULL;
+	cl_command_queue queue = clCreateCommandQueue(ctx, device_id, 0, &error);
+	if(check_cl_error(error, outError)) {
+	  clReleaseContext(ctx);
+	  return NULL;
 	}
     
 #if PL_DEBUG
@@ -144,7 +171,7 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
 			break;
 		}
 		
-		size_t len = entry->d_namlen;
+		size_t len = strlen(entry->d_name);
 		const char *name = entry->d_name;
         
 		if (len > sizeof(PL_OPENCL_FILE_EXTENSION)-1 
