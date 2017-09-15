@@ -22,7 +22,7 @@
 #define RAD_TO_DEG   57.29577951308232
 #endif
 
-#define TEST_POINTS 1000
+#define TEST_POINTS 10000
 #define TOL 1.e-5
 
 typedef struct test_params_s {
