@@ -13,7 +13,7 @@
 
 #include <dirent.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/uio.h>
@@ -104,14 +104,13 @@ PLContext *pl_context_init(cl_device_type type, cl_int *outError) {
 
 	PLContext *pl_ctx;
 	
-	if ((pl_ctx = malloc(sizeof(PLContext))) == NULL) {
+	if ((pl_ctx = calloc(1, sizeof(PLContext))) == NULL) {
 		clReleaseContext(ctx);
 		clReleaseCommandQueue(queue);
 		if (outError != NULL)
 			*outError = CL_OUT_OF_HOST_MEMORY;
 		return NULL;
 	}
-	memset(pl_ctx, 0, sizeof(PLContext));
 	
 	pl_ctx->ctx = ctx;
 	pl_ctx->queue = queue;
