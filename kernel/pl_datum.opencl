@@ -80,36 +80,28 @@ __kernel void pl_cartesian_to_geodesic(
     /* Note: Variable names follow the notation used in Toms, Feb 1996 */
     
     float8 W;        /* distance from Z axis */
-    float8 W2;       /* square of distance from Z axis */
     float8 T0;       /* initial estimate of vertical component */
     float8 T1;       /* corrected estimate of vertical component */
     float8 S0;       /* initial estimate of horizontal component */
-    float8 S1;       /* corrected estimate of horizontal component */
     float8 Sin_B0;   /* sin(B0), B0 is estimate of Bowring aux variable */
     float8 Sin3_B0;  /* cube of sin(B0) */
     float8 Cos_B0;   /* cos(B0) */
-    float8 Sin_p1;   /* sin(phi1), phi1 is estimated latitude */
-    float8 Cos_p1;   /* cos(phi1) */
     float8 Sum;      /* numerator of cos(phi1) */
     
     float8 lambda, phi;
    
     lambda = select(select((float8)M_PI_2F, (float8)-M_PI_2F, Y <= 0.f), atan2(Y, X), X != 0.f);
 
-    W2 = X*X + Y*Y;
-    W = sqrt(W2);
+    W = hypot(X, Y);
     T0 = Z * AD_C;
-    S0 = sqrt(T0 * T0 + W2);
+    S0 = hypot(T0, W);
     Sin_B0 = T0 / S0;
     Cos_B0 = W / S0;
     Sin3_B0 = Sin_B0 * Sin_B0 * Sin_B0;
     T1 = Z + minor_axis * ecc2 / one_ecc2 * Sin3_B0;
     Sum = W - major_axis * ecc2 * Cos_B0 * Cos_B0 * Cos_B0;
-    S1 = sqrt(T1*T1 + Sum * Sum);
-    Sin_p1 = T1 / S1;
-    Cos_p1 = Sum / S1;
-    
-    phi = atan(Sin_p1 / Cos_p1);
+
+    phi = atan2(T1, Sum);
     
     lp_out[i].even = degrees(lambda);
     lp_out[i].odd = degrees(phi);
