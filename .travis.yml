@@ -9,12 +9,12 @@ addons:
         packages:
             - libblas-dev
             - liblapack-dev
-            - libproj-dev
             - ocl-icd-opencl-dev
             - alien
 
 install:
-    - ./.travis/install.sh
+    - ./.travis/install-proj4.sh
+    - ./.travis/install-opencl.sh
 
 script:
     - cmake .
