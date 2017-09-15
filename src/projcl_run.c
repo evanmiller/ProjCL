@@ -494,11 +494,14 @@ cl_int pl_enqueue_kernel_robinson(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy
 	cl_int error = CL_SUCCESS;
 	cl_int argc = 0;
 	
+	PLSpheroidInfo info = _pl_get_spheroid_info(PL_SPHEROID_SPHERE);
+    float k0 = scale * info.major_axis;
+
 	error |= clSetKernelArg(kernel, argc++, sizeof(cl_mem), &xy_in);
 	error |= clSetKernelArg(kernel, argc++, sizeof(cl_mem), &xy_out);
 	error |= clSetKernelArg(kernel, argc++, sizeof(cl_uint), &count);
 
-	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &scale);
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &k0);
 	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &x0);
 	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &y0);
 	if (error != CL_SUCCESS)

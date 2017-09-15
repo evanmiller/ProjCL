@@ -562,9 +562,9 @@ int test_robinson(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_poin
 
     for (i=0; i<sizeof(robinson_tests)/sizeof(test_params_t); i++) {
         test_params_t test = robinson_tests[i];
-        error = pl_project_robinson(ctx, orig_buf, proj_points, 1000.0, 0.0, 0.0);
+        error = pl_project_robinson(ctx, orig_buf, proj_points, 1.0, 0.0, 0.0);
         proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
-        error = pl_unproject_robinson(ctx, proj_buf, orig_points2, 1000.0, 0.0, 0.0);
+        error = pl_unproject_robinson(ctx, proj_buf, orig_points2, 1.0, 0.0, 0.0);
         pl_unload_projection_data(proj_buf);
 
         consistency_failures += compare_points(orig_points, orig_points2, 
