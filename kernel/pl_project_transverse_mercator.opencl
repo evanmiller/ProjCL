@@ -7,25 +7,20 @@ __kernel void pl_project_transverse_mercator_s (
     float scale, float x0, float y0,
     float phi0,
     float lambda0,
-    float ml0,
-    float8 en
+    float8 kruger
 ) {
     int i = get_global_id(0);
     
     float8 lambda = radians(xy_in[i].even) - lambda0;
     float8 phi    = radians(xy_in[i].odd);
     
-    float8 x, y, b, cosPhi, sinLambda, cosLambda;
+    float8 x, y, tau, sinLambda, cosLambda;
     
-    cosPhi = cos(phi);
     sinLambda = sincos(lambda, &cosLambda);
     
-    b = cosPhi * sinLambda;
-    x = 0.5f * log((1.f + b) / (1.f - b));
-    y = cosPhi * cosLambda / sqrt(1.f - b * b);
-    y = select(acos(y), 0.f, fabs(y) >= 1.f);
-    y = select(y, -y, phi < 0.f);
-    y = y - phi0;
+    tau = tan(phi);
+    y = atan2(tau, cosLambda) - phi0;
+    x = asinh(sinLambda / hypot(tau, cosLambda));
     
     xy_out[i].even = x0 + scale * x;
     xy_out[i].odd = y0 + scale * y;
@@ -39,22 +34,20 @@ __kernel void pl_unproject_transverse_mercator_s (
     float scale, float x0, float y0,
     float phi0,
     float lambda0,
-    float ml0,
-    float8 en
+    float8 kruger
 ) {
     int i = get_global_id(0);
 
     float8 x = (xy_in[i].even - x0) / scale;
-    float8 y = (xy_in[i].odd - y0) / scale;
+    float8 y = (xy_in[i].odd - y0) / scale + phi0;
     
-    float8 h, g, phi, lambda;
+    float8 phi, lambda, sinhX, sinY, cosY;
     
-    h = exp(x);
-    g = 0.5f * (h - 1.f / h);
-    h = cos(phi0 + y);
-    phi = asin(sqrt((1.f - h * h) / (1.f + g * g)));
-    phi = select(phi, -phi, y < 0.f);
-    lambda = select(0.f, atan2(g, h), g != 0.f || h != 0.f);
+    sinhX = sinh(x);
+    sinY = sincos(y, &cosY);
+
+    lambda = atan2(sinhX, cosY);
+    phi = atan2(sinY, hypot(sinhX, cosY));
     
     xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
     xy_out[i].odd  = degrees(phi);
@@ -72,35 +65,40 @@ __kernel void pl_project_transverse_mercator_e (
     float scale, float x0, float y0,
     float phi0,
     float lambda0,
-    float ml0,
-    float8 en
+    float8 kruger
 ) {
     int i = get_global_id(0);
 
     float8 lambda = radians(xy_in[i].even) - lambda0;
     float8 phi    = radians(xy_in[i].odd);
 
-    float8 sinPhi, cosPhi, t, al, als, n, x, y;
+    float8 x, y, xi, eta, tau, tau1, sigma, sinLambda, cosLambda;
+    float f, n;
 
-    sinPhi = sincos(phi, &cosPhi);
-    t = select(sinPhi/cosPhi, 0.f, fabs(cosPhi) < EPS7);
-    t *= t;
-    al = cosPhi * lambda;
-    als = al * al;
-    al /= sqrt(1.f - ecc2 * sinPhi * sinPhi);
-    n = ecc2 / one_ecc2 * cosPhi * cosPhi;
+    f = 1.f - sqrt(one_ecc2);
+    n = f / (2.f - f);
 
-    x = al * (FC1 +
-            FC3 * als * (1.f - t + n +
-                FC5 * als * (5.f + t * (t - 18.f) + n * (14.f - 58.f * t)
-                    + FC7 * als * (61.f + t * ( t * (179.f - t) - 479.f ) )
-                    )));
-    y = (pl_mlfn(phi, sinPhi, cosPhi, en) - ml0 +
-            sinPhi * al * lambda * FC2 * ( 1.f +
-                FC4 * als * (5.f - t + n * (9.f + 4.f * n) +
-                    FC6 * als * (61.f + t * (t - 58.f) + n * (270.f - 330.f * t)
-                        + FC8 * als * (1385.f + t * ( t * (543.f - t) - 3111.f) )
-                        ))));
+    sinLambda = sincos(lambda, &cosLambda);
+    
+    tau = tan(phi);
+    sigma = sinh(ecc * atanh(ecc * tau / hypot(1.f, tau)));
+
+    tau1 = tau * hypot(1.f, sigma) - sigma * hypot(1.f, tau);
+
+    xi = atan2(tau1, cosLambda);
+    eta = asinh(sinLambda / hypot(tau1, cosLambda));
+
+    y = xi - phi0;
+    y += kruger.s0 * sin(2.f * xi) * cosh(2.f * eta);
+    y += kruger.s1 * sin(4.f * xi) * cosh(4.f * eta);
+    y += kruger.s2 * sin(6.f * xi) * cosh(6.f * eta);
+    y += kruger.s3 * sin(8.f * xi) * cosh(8.f * eta);
+
+    x = eta;
+    x += kruger.s0 * cos(2.f * xi) * sinh(2.f * eta);
+    x += kruger.s1 * cos(4.f * xi) * sinh(4.f * eta);
+    x += kruger.s2 * cos(6.f * xi) * sinh(6.f * eta);
+    x += kruger.s3 * cos(8.f * xi) * sinh(8.f * eta);
 
     xy_out[i].even = x0 + scale * x;
     xy_out[i].odd  = y0 + scale * y;
@@ -118,39 +116,40 @@ __kernel void pl_unproject_transverse_mercator_e (
     float scale, float x0, float y0,
     float phi0,
     float lambda0,
-    float ml0,
-    float8 en
+    float8 kruger
 ) {
     int i = get_global_id(0);
 
     float8 x = (xy_in[i].even - x0) / scale;
-    float8 y = (xy_in[i].odd - y0) / scale;
+    float8 y = (xy_in[i].odd - y0) / scale + phi0;
 
-    float8 sinPhi, cosPhi, con, t, n, d, ds;
+    float8 phi, lambda, sinhX, sinY, cosY;
+    float8 xi, eta;
+    float8 tau0, sigma0, tau0p, dtau0;
 
-    float8 lambda, phi;
+    xi = y;
+    xi -= kruger.s4 * sin(2.f * y) * cosh(2.f * x);
+    xi -= kruger.s5 * sin(4.f * y) * cosh(4.f * x);
+    xi -= kruger.s6 * sin(6.f * y) * cosh(6.f * x);
+    xi -= kruger.s7 * sin(8.f * y) * cosh(8.f * x);
 
-    phi = pl_inv_mlfn(ml0 + y, ecc2, en);
+    eta = x;
+    eta -= kruger.s4 * cos(2.f * y) * sinh(2.f * x);
+    eta -= kruger.s5 * cos(4.f * y) * sinh(4.f * x);
+    eta -= kruger.s6 * cos(6.f * y) * sinh(6.f * x);
+    eta -= kruger.s7 * cos(8.f * y) * sinh(8.f * x);
 
-    sinPhi = sincos(phi, &cosPhi);
+    sinY = sincos(xi, &cosY);
+    sinhX = sinh(eta);
 
-    t = select(0.f, sinPhi/cosPhi, fabs(cosPhi) > EPS7);
-    n = ecc2 / one_ecc2 * cosPhi * cosPhi;
-    con = 1.f - ecc2 * sinPhi * sinPhi;
-    d = x * sqrt(con);
-    con *= t;
-    t *= t;
-    ds = d * d;
-    phi -= (con * ds / one_ecc2) * FC2 * (1.f - 
-            ds * FC4 * (5.f + t * (3.f - 9.f * n) + n * (1.f - 4.f * n) -
-                ds * FC6 * (61.f + t * (90.f - 252.f * n + 45.f * t) + 46.f * n
-                    - ds * FC8 * (1385.f + t * (3633.f + t * (4095.f + 1574.f * t)))
-                    )));
-    lambda = d * (FC1 -
-            ds * FC3 * (1.f + 2.f * t + n -
-                ds * FC5 * (5.f + t * (28.f + 24.f * t + 8.f * n) + 6.f * n
-                    - ds * FC7 * (61.f + t * (662.f + t * (1320.f + 720.f * t)))
-                    ))) / cosPhi;
+    /* Newton's method (1 iteration) */
+    tau0 = sinY / hypot(sinhX, cosY);
+    sigma0 = sinh(ecc * tanh(ecc * tau0 / hypot(1.f, tau0)));
+    tau0p = tau0 * hypot(1.f, sigma0) - sigma0 * hypot(1.f, tau0);
+    dtau0 = (tau0 - tau0p) / hypot(1.f, tau0p) * (1.f + one_ecc2 * tau0 * tau0) / (one_ecc2 * hypot(1.f, tau0));
+
+    lambda = atan2(sinhX, cosY);
+    phi = atan(tau0 + dtau0);
 
     xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
     xy_out[i].odd  = degrees(phi);

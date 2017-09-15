@@ -520,19 +520,19 @@ cl_int pl_enqueue_kernel_transverse_mercator(cl_kernel kernel, PLContext *pl_ctx
     PLSpheroidInfo info = _pl_get_spheroid_info(pl_ell);
     error = _pl_set_kernel_args(kernel, xy_in, xy_out, count, &info, &argc);
     
-    float k0 = scale * info.major_axis;
+    float k0 = scale * info.major_axis * info.kruger_a;
     float lambda0 = lon0 * DEG_TO_RAD;
     float phi0 = lat0 * DEG_TO_RAD;
     
-    float ml0 = _pl_mlfn(phi0, sin(phi0), cos(phi0), info.en);
+    // float ml0 = _pl_mlfn(phi0, sin(phi0), cos(phi0), info.en);
     
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &k0);
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &x0);
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &y0);
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &phi0);
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &lambda0);
-    error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &ml0);
-    error |= clSetKernelArg(kernel, argc++, sizeof(cl_float8), info.en);
+    // error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &ml0);
+    error |= clSetKernelArg(kernel, argc++, sizeof(cl_float8), info.kruger_coef);
     if (error != CL_SUCCESS)
         return error;
     

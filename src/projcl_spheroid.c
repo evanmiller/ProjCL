@@ -51,12 +51,31 @@ PLSpheroidInfo _pl_get_spheroid_info(PLSpheroid pl_ell) {
 	info.ecc = sqrt(info.ecc2);
 	info.ec = 1. - .5 * info.one_ecc2 * log((1. - info.ecc) / (1. + info.ecc)) / info.ecc;
 	
-	float t, es = info.ecc2;
+	double t, es = info.ecc2;
 	info.en[0] = C00 - es * (C02 + es * (C04 + es * (C06 + es * C08)));
 	info.en[1] = es * (C22 - es * (C04 + es * (C06 + es * C08)));
 	info.en[2] = (t = es * es) * (C44 - es * (C46 + es * C48));
 	info.en[3] = (t *= es) * (C66 - es * C68);
 	info.en[4] = t * es * C88;
+
+    double n = (info.major_axis - info.minor_axis) / (info.major_axis + info.minor_axis);
+    double n2 = n * n;
+    double n3 = n2 * n;
+    double n4 = n2 * n2;
+
+    info.kruger_a = (1.0 + 0.25 * n2 + n4 / 64.0) / (1.0 + n);
+
+    /* alpha */
+    info.kruger_coef[0] = 0.5 * n - 2.0/3.0 * n2 + 0.3125 * n3 + 41.0/180.0 * n4;
+    info.kruger_coef[1] = 13.0/48.0 * n2 - 0.6 * n3 + 557.0 / 1440.0 * n4;
+    info.kruger_coef[2] = 61.0/240.0 * n3 - 103.0/140.0 * n4;
+    info.kruger_coef[3] = 49561.0 / 161280.0 * n4;
+
+    /* beta */
+    info.kruger_coef[4] = 0.5 * n - 2.0/3.0 * n2 + 37.0 / 96.0 * n3 - 1.0 / 360.0 * n4;
+    info.kruger_coef[5] = 1.0/48.0 * n2 + 1.0 / 15.0 * n3 - 437.0 / 1440.0 * n4;
+    info.kruger_coef[6] = 17.0/480.0 * n3 - 37.0/840.0 * n4;
+    info.kruger_coef[7] = 4397.0 / 161280.0 * n4;
 	
 	return info;
 }
