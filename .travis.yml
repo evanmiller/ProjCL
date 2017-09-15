@@ -9,4 +9,4 @@ install:
 script:
     - cmake .
     - make
-    - ./test/projcl_test
+    - ./test/projcl_test -CPU
