@@ -10,6 +10,7 @@ addons:
             - libblas-dev
             - liblapack-dev
             - libproj-dev
+            - ocl-icd-opencl-dev
             - alien
 
 install:
