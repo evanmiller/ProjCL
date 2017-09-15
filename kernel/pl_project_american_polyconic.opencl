@@ -21,13 +21,13 @@ __kernel void pl_project_american_polyconic_e(
 	float8 lambda = radians(xy_in[i].even) - lambda0;
 	float8 phi    = radians(xy_in[i].odd);
 	
-	float8 ms, sinphi, cosphi, x, y;
+	float8 ms, sinphi, cosphi, cosE, x, y;
 	
 	sinphi = sincos(phi, &cosphi);
 	ms = pl_msfn(sinphi, cosphi, ecc2) / sinphi;
 		
-	x = ms * sin(lambda *= sinphi);
-	y = (pl_mlfn(phi, sinphi, cosphi, en) - ml0) + ms * (1.f - cos(lambda));
+	x = ms * sincos(lambda * sinphi, &cosE);
+	y = (pl_mlfn(phi, sinphi, cosphi, en) - ml0) + ms * (1.f - cosE);
 
 	xy_out[i].even = x0 + scale * x;
 	xy_out[i].odd = y0 + scale * y;
@@ -52,12 +52,11 @@ __kernel void pl_project_american_polyconic_s(
 	float8 lambda = radians(xy_in[i].even) - lambda0;
 	float8 phi    = radians(xy_in[i].odd);
 	
-	float8 sinphi, cosphi, cotphi, sinE, cosE, x, y;
+	float8 sinphi, cosphi, cotphi, cosE, x, y;
 	
 	sinphi = sincos(phi, &cosphi);
 	cotphi = cosphi / sinphi;
-	sinE = sincos(lambda * sinphi, &cosE);
-	x = sinE * cotphi;
+	x = cotphi * sincos(lambda * sinphi, &cosE);
 	y = phi - phi0 + cotphi * (1.f - cosE);
 	
 	xy_out[i].even = x0 + scale * x;
