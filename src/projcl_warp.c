@@ -6,7 +6,7 @@
 //  Copyright 2011 __MyCompanyName__. All rights reserved.
 //
 
-#import <projcl/projcl.h>
+#include <projcl/projcl.h>
 #include <projcl/projcl_warp.h>
 #include "projcl_util.h"
 #include "projcl_run.h"

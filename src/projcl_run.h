@@ -7,9 +7,6 @@
  *
  */
 
-#import <OpenCL/opencl.h>
-#import <projcl/projcl_types.h>
-
 cl_int pl_read_buffer(cl_command_queue queue, cl_mem xy_out_buf, float *xy_out, size_t out_count);
 
 cl_int pl_enqueue_kernel_albers_equal_area(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy_in, cl_mem xy_out, size_t count,

@@ -7,9 +7,13 @@
  *
  */
 
-#import <OpenCL/opencl.h>
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
 
-#import "projcl_types.h"
+#include "projcl_types.h"
 
 PLContext *pl_context_init(cl_device_type type, cl_int *outError);
 void pl_context_free(PLContext *pl_ctx);

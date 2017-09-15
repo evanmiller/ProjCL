@@ -6,8 +6,8 @@
 //  Copyright 2011 __MyCompanyName__. All rights reserved.
 //
 
-#import <projcl/projcl.h>
 #include <stdlib.h>
+#include <projcl/projcl.h>
 #include "projcl_run.h"
 #include "projcl_util.h"
 #include "projcl_spheroid.h"

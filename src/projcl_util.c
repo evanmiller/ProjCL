@@ -6,6 +6,7 @@
 //  Copyright 2011 __MyCompanyName__. All rights reserved.
 //
 
+#include <projcl/projcl.h>
 #include "projcl_util.h"
 #include "projcl_spheroid.h"
 #include <strings.h>

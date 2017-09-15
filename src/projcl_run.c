@@ -7,6 +7,7 @@
  *
  */
 
+#include <projcl/projcl.h>
 #include "projcl_run.h"
 #include "projcl_util.h"
 #include "projcl_spheroid.h"
