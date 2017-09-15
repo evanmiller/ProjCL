@@ -55,10 +55,8 @@ PLContext *pl_context_init(cl_device_type type, cl_int *outError) {
 	if(check_cl_error(error, outError))
 	  return NULL;
 
-	cl_context_properties context_properties[] = {CL_CONTEXT_PLATFORM, platform_id[PLATFORM_INDEX], NULL};
-
 	cl_uint num_devices;
-	error = clGetDeviceIDs(platform_id[PLATFORM_INDEX], type, NULL, NULL, &num_devices);
+	error = clGetDeviceIDs(platform_id[PLATFORM_INDEX], type, 0, NULL, &num_devices);
 	if(check_cl_error(error, outError))
 	  return NULL;
 #if PL_DEBUG
