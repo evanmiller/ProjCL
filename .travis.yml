@@ -10,9 +10,10 @@ addons:
             - liblapack-dev
             - ocl-icd-opencl-dev
             - libproj-dev
+            - alien
 
 install:
-    - ./.travis/install.sh
+    - cat /proc/cpuinfo
 
 script:
     - cmake .
