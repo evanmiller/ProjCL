@@ -9,7 +9,6 @@ addons:
         packages:
             - libblas-dev
             - liblapack-dev
-            - ocl-icd-opencl-dev
             - libproj-dev
             - alien
 
