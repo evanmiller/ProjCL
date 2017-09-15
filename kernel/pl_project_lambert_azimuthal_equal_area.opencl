@@ -15,11 +15,11 @@ __kernel void pl_project_lambert_azimuthal_equal_area_e(
     float phi0,
     float lambda0,
     float qp,
-    float rq,
-    float3 apa,
     float sinB1,
     float cosB1,
 
+    float rq,
+    float4 apa,
     float dd,
     float xmf,
     float ymf
@@ -61,8 +61,6 @@ __kernel void pl_project_lambert_azimuthal_equal_area_s(
     float phi0,
     float lambda0,
     float qp,
-    float rq,
-    float3 apa,
     float sinB1,
     float cosB1
 ) {
@@ -102,11 +100,12 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_e(
     float lambda0,
                                                           
     float qp,
-    float rq,
-    float3 apa,
 
     float sinB1,
     float cosB1,
+
+    float rq,
+    float4 apa,
 
     float dd,
     float xmf,
@@ -134,7 +133,7 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_e(
 
     lambda = atan2(x, y);    
     
-    phi = (beta + apa.x * sin(2.f * beta) + apa.y * sin(4.f * beta) + apa.z * sin(6.f * beta));
+    phi = (beta + apa.s0 * sin(2.f * beta) + apa.s1 * sin(4.f * beta) + apa.s2 * sin(6.f * beta));
      
     xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
     xy_out[i].odd = degrees(phi);
@@ -153,8 +152,6 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_s(
     float phi0,
     float lambda0,
     float qp,
-    float rq,
-    float3 apa,
     float sinB1,
     float cosB1
 ) {

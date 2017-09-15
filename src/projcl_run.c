@@ -314,7 +314,7 @@ cl_int pl_enqueue_kernel_lambert_azimuthal_equal_area(cl_kernel kernel, PLContex
 	PLSpheroidInfo info = _pl_get_spheroid_info(pl_ell);
 	error = _pl_set_kernel_args(kernel, xy_in, xy_out, count, &info, &offset);
     
-    float apa[3];
+    float apa[4];
     
     _pl_authset(info.ecc2, apa);
 	
@@ -336,11 +336,12 @@ cl_int pl_enqueue_kernel_lambert_azimuthal_equal_area(cl_kernel kernel, PLContex
     error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &phi0);
     error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &lambda0);
 	error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &qp);
-    error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &rq);
-    error |= clSetKernelArg(kernel, offset++, 3 * sizeof(cl_float), &apa);
 	error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &sinB1);
     error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &cosB1);
     if (!_pl_spheroid_is_spherical(pl_ell)) {
+        error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &rq);
+        error |= clSetKernelArg(kernel, offset++, sizeof(cl_float4), apa);
+
         error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &dd);
         error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &xmf);
         error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &ymf);
