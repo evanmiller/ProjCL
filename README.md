@@ -15,26 +15,24 @@ CPU's vector capabilities.
 
 Most projection routines were originally adapted from Proj.4 code, with
 branches replaced with select() statements and various tweaks implemented along
-the way. Unlike Proj.4, or any other project for that matter, ProjCL includes a
-functioning Winkel Tripel inverse projection.
+the way.
 
 All of the routines are single-precision, since that gets you about 1m accuracy,
 which is more than what I needed for [Magic
 Maps](https://magicmaps.evanmiller.org/). Double-precision should probably be
 implemented at some point, but that will be painful as OpenCL compilers tend to
-have half-assed support for double-precision.
+have half-hearted support for double-precision.
 
 The API differs from Proj.4 in that each projection gets its own pair of
 functions (one forward, one inverse) with arguments only for the parameters
 that apply to that projection. Text-based C APIs like Proj.4's are prone to
 error in my experience.
 
-A test suite covers the projection routines, and if you run it you will notice
-that there are flaws in the Transverse Mercator algorithms. Charles Karney has
-recently [published](https://arxiv.org/pdf/1002.1417.pdf) new TM algorithms
-that would be nice to use here. It would also be nice to use his new geodesic
-algorithms, since at the moment ProjCL can only perform spherical distance
-calculations.
+A test suite covers the projection routines, but not the geodesic calculations
+or datum shifts. The output is checked for self-consistency, as well as
+agreement with Proj.4. The code is tested to work on OS X as well as Linux;
+when making a pull request, please ensure all the tests pass with 
+`./test/projcl_test -CPU`.
 
 ProjCL needs more map projections. In fact, the world needs more map projections.
 If you want to try your hand at one, check out "Adding a Map Projection" below.
