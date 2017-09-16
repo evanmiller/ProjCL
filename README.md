@@ -49,159 +49,178 @@ Available projections:
 * Transverse Mercator
 * Winkel Tripel
 
-Available datums and spheroids: see src/projcl_types.h
+Available datums and spheroids: see [include/projcl/projcl_types.h](https://github.com/evanmiller/ProjCL/blob/master/include/projcl/projcl_types.h)
 
 Building
 --
 
 ProjCL requires [CMake](http://www.cmake.org) build system. To build the library do:
 
-	$cmake CMakeLists.txt
-	$make	
+```
+$ cmake CMakeLists.txt
+$ make	
+```
 
 Setup
 --
 
-    #include "projcl.h"
+```{C}
+#include "projcl.h"
 
-    cl_int error = CL_SUCCESS;
+cl_int error = CL_SUCCESS;
 
-    PLContext *ctx = pl_context_init(CL_DEVICE_TYPE_CPU, &error);
+PLContext *ctx = pl_context_init(CL_DEVICE_TYPE_CPU, &error);
 
-    PLCode *code = pl_compile_code(ctx, "/path/to/ProjCL/kernel", 
-            PL_MODULE_DATUM | PL_MODULE_GEODESIC | PL_MODULE_PROJECTION);
+PLCode *code = pl_compile_code(ctx, "/path/to/ProjCL/kernel", 
+        PL_MODULE_DATUM | PL_MODULE_GEODESIC | PL_MODULE_PROJECTION);
 
-    error = pl_load_code(ctx, code);
+error = pl_load_code(ctx, code);
+```
 
 Teardown
 --
-    pl_unload_code(ctx);
-    pl_release_code(code);
-    pl_context_free(ctx);
+
+```{C}
+pl_unload_code(ctx);
+pl_release_code(code);
+pl_context_free(ctx);
+```
 
 Forward projection
 --
 
-    /* get the input data from somewhere */
-    /* latitude-longitude pairs */
-    int count = ...;
-    float *lat_lon_data = ...;
+```{C}
+/* get the input data from somewhere */
+/* latitude-longitude pairs */
+int count = ...;
+float *lat_lon_data = ...;
 
-    /* load point data */
-    PLProjectionBuffer *proj_buffer = pl_load_projection_data(ctx, lat_lon_data, count, 1, &error);
+/* load point data */
+PLProjectionBuffer *proj_buffer = pl_load_projection_data(ctx, lat_lon_data, count, 1, &error);
 
-    /* allocate output buffer */
-    float *xy_data = malloc(2 * count * sizeof(float));
+/* allocate output buffer */
+float *xy_data = malloc(2 * count * sizeof(float));
 
-    /* project forwards */
-    error = pl_project_mercator(ctx, proj_buffer, xy_data, PL_SPHEROID_WGS_84, 
-            1.0,  /* scale */
-            0.0,  /* false northing */
-            0.0); /* false easting */
+/* project forwards */
+error = pl_project_mercator(ctx, proj_buffer, xy_data, PL_SPHEROID_WGS_84, 
+        1.0,  /* scale */
+        0.0,  /* false northing */
+        0.0); /* false easting */
 
-    /* unload */
-    pl_unload_projection_data(proj_buffer);
+/* unload */
+pl_unload_projection_data(proj_buffer);
+```
 
 Inverse projection
 --
 
-    /* get the input data from somewhere */
-    /* X-Y pairs */
-    int count = ...;
-    float *xy_data = ...;
+```{C}
+/* get the input data from somewhere */
+/* X-Y pairs */
+int count = ...;
+float *xy_data = ...;
 
-    PLProjectionBuffer *cartesian_buffer = pl_load_projection_data(ctx, xy_data, count, 1, &error);
+PLProjectionBuffer *cartesian_buffer = pl_load_projection_data(ctx, xy_data, count, 1, &error);
 
-    float *lat_lon_data = malloc(2 * count * sizeof(float));
+float *lat_lon_data = malloc(2 * count * sizeof(float));
 
-    error = pl_unproject_mercator(ctx, cartesian_buffer, lat_lon_data, PL_SPHEROID_WGS_84,
-            1.0, 0.0, 0.0);
+error = pl_unproject_mercator(ctx, cartesian_buffer, lat_lon_data, PL_SPHEROID_WGS_84,
+        1.0, 0.0, 0.0);
 
-    pl_unload_projection_data(cartesian_buffer);
+pl_unload_projection_data(cartesian_buffer);
+```
 
 Forward geodesic: Fixed distance, multiple points, multiple angles (blast radii)
 --
 
-    /* get the point data from somewhere */
-    float *xy_in = ...;
-    int xy_count = ...;
+```{C}
+/* get the point data from somewhere */
+float *xy_in = ...;
+int xy_count = ...;
 
-    /* get the angle (azimuth) data from somewhere */
-    float *az_in = ...;
-    int az_count = ...;
+/* get the angle (azimuth) data from somewhere */
+float *az_in = ...;
+int az_count = ...;
 
-    /* load it up */
-    PLForwardGeodesicFixedDistanceBuffer *buf = pl_load_forward_geodesic_fixed_distance_data(ctx,
-        xy_in, xy_count, az_in, az_count, &error);
+/* load it up */
+PLForwardGeodesicFixedDistanceBuffer *buf = pl_load_forward_geodesic_fixed_distance_data(ctx,
+    xy_in, xy_count, az_in, az_count, &error);
 
-    /* allocate output buffer */
-    float *xy_out = malloc(2 * xy_count * az_count * sizeof(float));
+/* allocate output buffer */
+float *xy_out = malloc(2 * xy_count * az_count * sizeof(float));
 
-    /* compute */
-    error = pl_forward_geodesic_fixed_distance(ctx, buf, xy_out, PL_SPHEROID_SPHERE,
-            1000.0 /* distance in meters */
-            );
+/* compute */
+error = pl_forward_geodesic_fixed_distance(ctx, buf, xy_out, PL_SPHEROID_SPHERE,
+        1000.0 /* distance in meters */
+        );
 
-    /* unload */
-    pl_unload_forward_geodesic_fixed_distance_data(buf);
+/* unload */
+pl_unload_forward_geodesic_fixed_distance_data(buf);
+```
 
 Forward geodesic: Fixed angle, single point, multiple distances (great circle)
 --
 
-    int count = ...;
-    float *dist_in = ...;
+```{C}
+int count = ...;
+float *dist_in = ...;
 
-    PLForwardGeodesicFixedAngleBuffer *buf = pl_load_forward_geodesic_fixed_angle_data(ctx,
-        dist_in, count, &error);
+PLForwardGeodesicFixedAngleBuffer *buf = pl_load_forward_geodesic_fixed_angle_data(ctx,
+    dist_in, count, &error);
 
-    float *xy_out = malloc(2 * count * sizeof(float));
-    float xy_in[2] = ...;
-    
-    error = pl_forward_geodesic_fixed_angle(ctx, buf, xy_in, xy_out, PL_SPHEROID_SPHERE, 
-            M_PI_2 /* angle in radians */
-            );
+float *xy_out = malloc(2 * count * sizeof(float));
+float xy_in[2] = ...;
 
-    pl_unload_forward_geodesic_fixed_angle_data(buf);
+error = pl_forward_geodesic_fixed_angle(ctx, buf, xy_in, xy_out, PL_SPHEROID_SPHERE, 
+        M_PI_2 /* angle in radians */
+        );
+
+pl_unload_forward_geodesic_fixed_angle_data(buf);
+```
 
 Inverse geodesic: Many-to-many (distance table)
 --
 
-    int count1 = ...;
-    float *xy1_in = ...;
+```{C}
+int count1 = ...;
+float *xy1_in = ...;
 
-    int count2 = ...;
-    float *xy2_in = ...;
+int count2 = ...;
+float *xy2_in = ...;
 
-    float *dist_out = malloc(count1 * count2 * sizeof(float));
+float *dist_out = malloc(count1 * count2 * sizeof(float));
 
-    PLInverseGeodesicBuffer *buf = pl_load_inverse_geodesic_data(ctx, 
-            xy1_in, count1, 1, xy2_in, count2, &error);
+PLInverseGeodesicBuffer *buf = pl_load_inverse_geodesic_data(ctx, 
+        xy1_in, count1, 1, xy2_in, count2, &error);
 
-    error = pl_inverse_geodesic(ctx, buf, dist_out, PL_SPHEROID_SPHERE, 
-            1.0 /* scale */);
+error = pl_inverse_geodesic(ctx, buf, dist_out, PL_SPHEROID_SPHERE, 
+        1.0 /* scale */);
 
-    pl_unload_inverse_geodesic_data(buf);
+pl_unload_inverse_geodesic_data(buf);
+```
 
 Datum shift
 --
 
-    /* load lon-lat coordinates */
-    int count = ...;
-    float *xy_in = ...;
-    PLDatumShiftBuffer *buf = pl_load_datum_shift_data(ctx, PL_SPHEROID_WGS_84,
-        xy_in, count, &error);
+```{C}
+/* load lon-lat coordinates */
+int count = ...;
+float *xy_in = ...;
+PLDatumShiftBuffer *buf = pl_load_datum_shift_data(ctx, PL_SPHEROID_WGS_84,
+    xy_in, count, &error);
 
-    /* allocate space for result */
-    float *xy_out = malloc(2 * count * sizeof(float));
+/* allocate space for result */
+float *xy_out = malloc(2 * count * sizeof(float));
 
-    /* perform the shift */
-    error = pl_shift_datum(ctx, 
-            PL_DATUM_NAD_83,  /* source */
-            PL_DATUM_NAD_27,  /* destination */
-            PL_SPHEROID_CLARKE_1866, /* destination spheroid */
-            buf, xy_out);
+/* perform the shift */
+error = pl_shift_datum(ctx, 
+        PL_DATUM_NAD_83,  /* source */
+        PL_DATUM_NAD_27,  /* destination */
+        PL_SPHEROID_CLARKE_1866, /* destination spheroid */
+        buf, xy_out);
 
-    pl_unload_datum_shift_data(buf);
+pl_unload_datum_shift_data(buf);
+```
 
 Adding a Map Projection
 --
@@ -211,20 +230,17 @@ need to...
 
 1. Create a file kernel/pl_project_&lt;name&gt;.opencl in kernel/ with the projection routines
 
-2. Create a pl_enqueue_kernel_&lt;name&gt; function in src/projcl_run.c
+2. Create a pl_enqueue_kernel_&lt;name&gt; function in [src/projcl_run.c](https://github.com/evanmiller/ProjCL/blob/master/src/projcl_run.c)
 
-3. Create pl_project_&lt;name&gt; and pl_unproject_&lt;name&gt; functions in src/projcl_project.c
+3. Create pl_project_&lt;name&gt; and pl_unproject_&lt;name&gt; functions in [src/projcl_project.c](https://github.com/evanmiller/ProjCL/blob/master/src/projcl_project.c)
 
-4. Add pl_project_&lt;name&gt; and pl_unproject_&lt;name&gt; prototypes to src/projcl.h
+4. Add pl_project_&lt;name&gt; and pl_unproject_&lt;name&gt; prototypes to [include/projcl/projcl.h](https://github.com/evanmiller/ProjCL/blob/master/include/projcl/projcl.h)
 
-5. Add tests to test/projcl_test.c
+5. Add tests to [test/projcl_test.c](https://github.com/evanmiller/ProjCL/blob/master/test/projcl_test.c)
 
 Some tips on writing OpenCL routines:
 
 * Use float16 arrays of 8 points for input and output
-* Use "any" and "all" for break conditions
-* Use "select" or the ternary operator for conditional assignments
-* Use "sincos" if you need the sine and cosine of the same angle
-* If you're on a Mac, get used to bisecting your code to find compilation
-  errors. Apple's OpenCL implementation is a low point in the history of
-  compilers.
+* Use `any` and `all` for break conditions
+* Use `select` or the ternary operator for conditional assignments
+* Use `sincos` if you need the sine and cosine of the same angle
