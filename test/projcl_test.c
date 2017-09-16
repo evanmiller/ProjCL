@@ -663,15 +663,15 @@ int compare_points(const float *points1, const float *points2, const float *ref_
     if (failures) {
         printf("%d failures\n", failures);
         printf("**** Max longitudinal error: (%f, %f) => (%f, %f)\n"
-               "                             (%f, %f) => (%f, %f) [%lf]\n",
+               "                             (%f, %f) => (%f, %f) [%lf @ %d]\n",
                ref_points[2*max_delta_x_i], ref_points[2*max_delta_x_i+1], points1[2*max_delta_x_i], points1[2*max_delta_x_i+1],
                ref_points[2*max_delta_x_i], ref_points[2*max_delta_x_i+1], points2[2*max_delta_x_i], points2[2*max_delta_x_i+1],
-               max_delta_x);
+               max_delta_x, max_delta_x_i);
         printf("**** Max latitudinal error: (%f, %f) => (%f, %f)\n"
-               "                            (%f, %f) => (%f, %f) [%lf]\n",
+               "                            (%f, %f) => (%f, %f) [%lf @ %d]\n",
                ref_points[2*max_delta_y_i], ref_points[2*max_delta_y_i+1], points1[2*max_delta_y_i], points1[2*max_delta_y_i+1],
                ref_points[2*max_delta_y_i], ref_points[2*max_delta_y_i+1], points2[2*max_delta_y_i], points2[2*max_delta_y_i+1],
-               max_delta_y);
+               max_delta_y, max_delta_y_i);
     } else {
         printf("ok\n");
     }
