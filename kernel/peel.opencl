@@ -81,12 +81,7 @@ float8 pl_tsfn(float8 phi, float8 sinphi, float e) {
 }
 
 float8 pl_qsfn(float8 sinphi, float e, float one_es) {
-	float8 con;
-
-	if (e < EPS7)
-		return (sinphi + sinphi);
-
-	con = e * sinphi;
+	float8 con = e * sinphi;
 	return (one_es * (sinphi / (1.f - con * con) -
 			(.5f / e) * log((1.f - con) / (1.f + con))));
 }

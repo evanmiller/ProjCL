@@ -7,9 +7,6 @@ float8 phi1_(float8 qs, float Te, float Tone_es) {
 
 	Phi = asin (.5f * qs);
 	
-	if (Te < EPS7)
-		return Phi;
-	
 	i = ALBERS_EQUAL_AREA_N_ITER;
 	
 	do {
@@ -134,13 +131,7 @@ __kernel void pl_unproject_albers_equal_area_e(
 	
 	y = rho0 - y;
 	
-	rho = hypot(x, y);
-	
-	if (n < 0.f) {
-		rho = -rho;
-		x = -x;
-		y = -y;
-	}
+	rho = copysign(hypot(x, y), n);
 	
 	phi = rho / dd;
 	
@@ -180,13 +171,7 @@ __kernel void pl_unproject_albers_equal_area_s(
 	
 	y = rho0 - y;
 	
-	rho = hypot(x, y);
-	
-	if (n < 0.f) {
-		rho = -rho;
-		x = -x;
-		y = -y;
-	}
+	rho = copysign(hypot(x, y), n);
 	
 	phi = rho / dd;
 	
@@ -194,9 +179,6 @@ __kernel void pl_unproject_albers_equal_area_s(
 	
 	phi = select(select((float8)M_PI_2F, (float8)-M_PI_2F, phi < 0.f), asin(phi), fabs(phi) <= 1.f);
 	lambda = atan2(x, y) / n;
-	
-//	phi = select(select(M_PI_2F, -M_PI_2F, n <= 0.f), phi, rho != 0.0);
-//	lambda = select(0.f, lambda, rho != 0.0);
 	
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
 	xy_out[i].odd = degrees(phi);
