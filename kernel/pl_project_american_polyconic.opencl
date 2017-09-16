@@ -1,3 +1,93 @@
+__kernel void pl_project_american_polyconic_s(
+	__global float16 *xy_in,
+	__global float16 *xy_out,
+	const unsigned int count,
+		
+	float scale,
+    float x0,
+    float y0,
+
+	float phi0,
+	float ml0,
+	float lambda0,
+	float8 en)
+{
+	int i = get_global_id(0);
+
+	float8 lambda = radians(xy_in[i].even) - lambda0;
+	float8 phi    = radians(xy_in[i].odd);
+	
+	float8 sinphi, cosphi, cotphi, cosE, x, y;
+	
+	sinphi = sincos(phi, &cosphi);
+	cotphi = cosphi / sinphi;
+	x = cotphi * sincos(lambda * sinphi, &cosE);
+	y = phi - phi0 + cotphi * (1.f - cosE);
+	
+	xy_out[i].even = x0 + scale * x;
+	xy_out[i].odd = y0 + scale * y;
+}
+
+__kernel void pl_unproject_american_polyconic_s(
+	__global float16 *xy_in,
+	__global float16 *xy_out,
+	const unsigned int count,
+		
+	float scale,
+    float x0,
+    float y0,
+
+	float phi0,
+	float ml0,
+	float lambda0,
+	float8 en)
+{
+	int i = get_global_id(0);
+	
+	float8 x = (xy_in[i].even - x0) / scale;
+	float8 y = (xy_in[i].odd - y0) / scale;
+	
+	float8 lambda, phi;
+	
+	float8 dPhi, dLam, cosPhi, sinPhi;
+    float8 cosLSinPhi, sinLSinPhi;
+    float8 f1, f2, df1phi, df2phi, df1lam, df2lam;
+    float8 c, invDet;
+
+    int iter = 4;
+
+    phi = y + phi0;
+    sinPhi = sincos(phi, &cosPhi);
+    lambda = asin(x * sinPhi / cosPhi) / sinPhi;
+    sinLSinPhi = sincos(lambda * sinPhi, &cosLSinPhi);
+	
+    do { /* Newton-Raphson w/ full Jacobian matrix */
+        c = lambda * cosPhi * cosPhi / sinPhi;
+
+        f1 = cosPhi * sinLSinPhi / sinPhi - x;
+        f2 = phi - phi0 + cosPhi * (1.f - cosLSinPhi) / sinPhi - y;
+
+        df1phi = c * cosLSinPhi - sinLSinPhi / sinPhi / sinPhi;
+        df2phi = 1.f + c * sinLSinPhi - (1.f - cosLSinPhi) / sinPhi / sinPhi;
+        df1lam = cosPhi * cosLSinPhi;
+        df2lam = cosPhi * sinLSinPhi;
+
+        invDet = 1.f / (df1phi * df2lam - df2phi * df1lam);
+
+        dPhi = (f1 * df2lam - f2 * df1lam) * invDet;
+        dLam = (f2 * df1phi - f1 * df2phi) * invDet;
+
+        phi -= dPhi;
+        lambda -= dLam;
+
+        sinPhi = sincos(phi, &cosPhi);
+        sinLSinPhi = sincos(lambda * sinPhi, &cosLSinPhi);
+	} while (--iter);
+	
+	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
+	xy_out[i].odd = degrees(phi);
+}
+
 __kernel void pl_project_american_polyconic_e(
 	__global float16 *xy_in,
 	__global float16 *xy_out,
@@ -29,36 +119,6 @@ __kernel void pl_project_american_polyconic_e(
 	x = ms * sincos(lambda * sinphi, &cosE);
 	y = (pl_mlfn(phi, sinphi, cosphi, en) - ml0) + ms * (1.f - cosE);
 
-	xy_out[i].even = x0 + scale * x;
-	xy_out[i].odd = y0 + scale * y;
-}
-
-__kernel void pl_project_american_polyconic_s(
-	__global float16 *xy_in,
-	__global float16 *xy_out,
-	const unsigned int count,
-		
-	float scale,
-    float x0,
-    float y0,
-
-	float phi0,
-	float ml0,
-	float lambda0,
-	float8 en)
-{
-	int i = get_global_id(0);
-
-	float8 lambda = radians(xy_in[i].even) - lambda0;
-	float8 phi    = radians(xy_in[i].odd);
-	
-	float8 sinphi, cosphi, cotphi, cosE, x, y;
-	
-	sinphi = sincos(phi, &cosphi);
-	cotphi = cosphi / sinphi;
-	x = cotphi * sincos(lambda * sinphi, &cosE);
-	y = phi - phi0 + cotphi * (1.f - cosE);
-	
 	xy_out[i].even = x0 + scale * x;
 	xy_out[i].odd = y0 + scale * y;
 }
@@ -114,47 +174,6 @@ __kernel void pl_unproject_american_polyconic_e(
 	}
 	c = sin(phi);
 	lambda = asin(x * tan(phi) * sqrt(1.f - ecc2 * c * c)) / c;
-	
-	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
-	xy_out[i].odd = degrees(phi);
-}
-
-__kernel void pl_unproject_american_polyconic_s(
-	__global float16 *xy_in,
-	__global float16 *xy_out,
-	const unsigned int count,
-		
-	float scale,
-    float x0,
-    float y0,
-
-	float phi0,
-	float ml0,
-	float lambda0,
-	float8 en)
-{
-	int i = get_global_id(0);
-	
-	float8 x = (xy_in[i].even - x0) / scale;
-	float8 y = (xy_in[i].odd - y0) / scale;
-	y+=phi0;
-	
-	float8 lambda, phi;
-	
-	float8 r = y * y + x * x;
-	
-	float8 dPhi, tanphi;
-    int iter;
-	
-	for(phi = y, iter = I_ITER; iter; --iter) {
-		tanphi = tan(phi);
-		dPhi = (y * (phi * tanphi + 1.f) - phi - 0.5f * (phi * phi + r) * tanphi) /
-			((phi - y) / tanphi - 1.f);
-		phi -= dPhi;
-		if (all(fabs(dPhi) <= TOL7))
-			break;
-	}
-	lambda = asin(x * tan(phi)) / sin(phi);
 	
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
 	xy_out[i].odd = degrees(phi);
