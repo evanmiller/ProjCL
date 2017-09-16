@@ -67,11 +67,11 @@ __kernel void pl_project_robinson_s(
 
 	float dphi = fabs(phi);
 	index = floor(dphi * C1);
-	index = select(index, NODES - 1, index >= NODES);
+	index = index >= NODES ? NODES - 1 : index;
 	dphi = degrees(dphi - RC1 * index);
 	x = V(ROBINSON_X[index], dphi) * FXC * lambda;
 	y = V(ROBINSON_Y[index], dphi) * FYC;
-	y = select(y, -y, phi < 0.f);
+	y = copysign(y, phi);
 	
 	xy_out[i].even = x0 + scale * x;
 	xy_out[i].odd = y0 + scale * y;
@@ -124,7 +124,7 @@ __kernel void pl_unproject_robinson_s(
 		phi = radians(5 * index + t);
 		lambda /= V(ROBINSON_X[index], t);
 	}
-	phi = select(phi, -phi, y < 0.f);
+	phi = copysign(phi, y);
 	
 	xy_out[i].even = degrees(lambda);
 	xy_out[i].odd = degrees(phi);
