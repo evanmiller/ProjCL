@@ -40,15 +40,14 @@ float8 pl_inv_mlfn(float8 argphi, float es, float8 en);
 float8 pl_msfn(float8 sinphi, float8 cosphi, float es);
 float8 pl_tsfn(float8 phi, float8 sinphi, float e);
 float8 pl_qsfn(float8 sinphi, float e, float one_es);
-float8 pl_phi2(float8 ts, float8 e);
+float8 pl_phi2(float8 ts_num, float ts_den, float e);
 float8 pl_mod_pi(float8 phi);
 float4 pl_interpolate_cubic4(float X, float4 A, float4 B, float4 C, float4 D);
 
 float8 pl_mlfn(float8 phi, float8 sphi, float8 cphi, float8 en) {
 	cphi *= sphi;
 	sphi *= sphi;
-	return(en.s0 * phi - cphi * (en.s1 + sphi*(en.s2
-											   + sphi*(en.s3 + sphi*en.s4))));
+	return(en.s0 * phi - cphi * (en.s1 + sphi*(en.s2 + sphi*(en.s3 + sphi*en.s4))));
 }
 
 float8 pl_inv_mlfn(float8 argphi, float es, float8 en) {
@@ -74,27 +73,25 @@ float8 pl_msfn(float8 sinphi, float8 cosphi, float es) {
 }
 
 float8 pl_tsfn(float8 phi, float8 sinphi, float e) {
-	sinphi *= e;
-	return (tan(.5f * (M_PI_2F - phi)) /
-		 pow((1.f - sinphi) / (1.f + sinphi), (float8)(.5f * e))
-		);
+	float8 con = e * sinphi;
+	return (tan(M_PI_4F - 0.5f * phi) / pow((1.f - con) / (1.f + con), .5f * e));
 }
 
 float8 pl_qsfn(float8 sinphi, float e, float one_es) {
 	float8 con = e * sinphi;
-	return (one_es * (sinphi / (1.f - con * con) -
-			(.5f / e) * log((1.f - con) / (1.f + con))));
+	return (one_es * (sinphi / (1.f - con * con) - (.5f / e) * log((1.f - con) / (1.f + con))));
 }
 
-float8 pl_phi2(float8 ts, float8 e) {
+float8 pl_phi2(float8 ts_num, float ts_den, float e) {
 	float8 eccnth, Phi, con, dphi;
 	int i;
 	
 	eccnth = .5f * e;
-	Phi = M_PI_2F - 2.f * atan(ts);
+	Phi = M_PI_2F - 2.f * atan2(ts_num, ts_den);
 	for (i = I_ITER; i; --i) {
 		con = e * sin(Phi);
-		dphi = M_PI_2F - 2.f * atan(ts * pow((1.f - con) / (1.f + con), eccnth)) - Phi;
+		dphi = M_PI_2F - 2.f * atan2(ts_num * pow(1.f - con, eccnth),
+                                     ts_den * pow(1.f + con, eccnth)) - Phi;
 		Phi += dphi;
 		if (all(fabs(dphi) <= ITOL))
 			break;
@@ -104,7 +101,7 @@ float8 pl_phi2(float8 ts, float8 e) {
 }
 
 float8 pl_mod_pi(float8 phi) {
-	return select(phi, phi - copysign((float8)(2.f*M_PIF), phi), fabs(phi) > M_PIF);
+	return select(phi, phi - copysign(2.f*M_PIF, phi), fabs(phi) > M_PIF);
 }
 
 float4 pl_interpolate_cubic4(float X, float4 A, float4 B, float4 C, float4 D) {

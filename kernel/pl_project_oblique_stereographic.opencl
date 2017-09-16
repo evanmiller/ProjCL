@@ -49,7 +49,7 @@ __kernel void pl_project_oblique_stereographic_e(
 
     /* Project ellipsoid onto sphere */
     float8 lambda = c0 * lambda_ell;
-    float8 phi = 2.f * atan(k0 * pow( tan(.5f * phi_ell + M_PI_4F), c0) *
+    float8 phi = 2.f * atan(k0 * pow(tan(.5f * phi_ell + M_PI_4F), c0) *
             srat(ecc * sin(phi_ell), .5f * c0 * ecc) ) - M_PI_2F;
 
     /* Project sphere onto plane */

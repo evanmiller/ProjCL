@@ -56,17 +56,6 @@ __kernel void pl_inverse_geodesic_s(
     float8 shl2 = sin(0.5f * dlam);
 
     dist_out[i*j_size+j] = 2.f * radius * asin(sqrt(shp2 * shp2 + cosPhi1 * cosPhi2 * shl2 * shl2));
-
-/*
-	shp = sin(dlam);
-	shl = cos(dlam);
-    A->az12 = atan2(c1 * shp, c0 * s1 - s0 * c1 * shl);
-    if (A->az12 < 0.)
-        A->az12 += 2.*M_PI;
-    A->az21 = -atan2(c0 * shp, c1 * s0 - s1 * c0 * shl);
-    if (A->az21 < 0.)
-        A->az21 += 2.*M_PI;
-		*/
 }
 
 __kernel void pl_forward_geodesic_fixed_distance_s(
@@ -97,12 +86,6 @@ __kernel void pl_forward_geodesic_fixed_distance_s(
 	phi2 = asin(sinPhi * cosDistance + cosPhi * sinDistance * cosAz);
 	lam2 = lam1 + atan2(sinDistance * sinAz, 
 		cosPhi * cosDistance - sinPhi * sinDistance * cosAz);
-	
-		/*	
-	dl = A->pt1->lam - A->pt2->lam;
-    A->az21 = atan2(cp * sin(dl),
-                    cos(A->pt2->phi) * sp - sin(A->pt2->phi) * cp * cos(dl));
-					*/
 
 	lp_out[i*j_size+j].even = degrees(pl_mod_pi(lam2));
 	lp_out[i*j_size+j].odd = degrees(phi2);
@@ -134,11 +117,6 @@ __kernel void pl_forward_geodesic_fixed_angle_s(
 	lam2 = lam1 + atan2(sinDistance * sinAz, 
 		cosPhi * cosDistance - sinPhi * sinDistance * cosAz);
 	
-		/*	
-	dl = A->pt1->lam - A->pt2->lam;
-    A->az21 = atan2(cp * sin(dl),
-                    cos(A->pt2->phi) * sp - sin(A->pt2->phi) * cp * cos(dl));
-					*/
 	lp_out[i].even = degrees(pl_mod_pi(lam2));
 	lp_out[i].odd = degrees(phi2);
 }

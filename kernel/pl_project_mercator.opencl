@@ -63,7 +63,7 @@ __kernel void pl_unproject_mercator_e(
 	
 	float8 lambda, phi;
 	
-	phi = pl_phi2(exp(-y), ecc);
+	phi = pl_phi2(exp(-y), 1.f, ecc);
 	lambda = x;
 	
 	xy_out[i].even = degrees(lambda);

@@ -3,19 +3,18 @@ float8 phi1_(float8 qs, float Te, float Tone_es);
 
 float8 phi1_(float8 qs, float Te, float Tone_es) {
 	int i;
-	float8 Phi, sinpi, cospi, con, com, dphi;
+	float8 Phi, sinphi, cosphi, con, com, dphi;
 
-	Phi = asin (.5f * qs);
+	Phi = asin(.5f * qs);
 	
 	i = ALBERS_EQUAL_AREA_N_ITER;
 	
 	do {
-		sinpi = sincos(Phi, &cospi);
-		con = Te * sinpi;
+		sinphi = sincos(Phi, &cosphi);
+		con = Te * sinphi;
 		com = 1.f - con * con;
-		dphi = .5f * com * com / cospi * (qs / Tone_es -
-		   sinpi / com + .5f / Te * log ((1.f - con) /
-		   (1.f + con)));
+		dphi = .5f * com * com / cosphi * (qs / Tone_es -
+		   sinphi / com + .5f / Te * log((1.f - con) / (1.f + con)));
 		Phi += dphi;
 	} while (any(fabs(dphi) > TOL7) && --i);
 	
@@ -137,8 +136,7 @@ __kernel void pl_unproject_albers_equal_area_e(
 	
 	phi = (c - phi * phi) / n;
 	
-	phi = select(select((float8)M_PI_2F, (float8)-M_PI_2F, phi < 0.f), 
-        phi1_(phi, ecc, one_ecc2), fabs(ec - fabs(phi)) > TOL7);
+	phi = select(copysign(M_PI_2F, phi), phi1_(phi, ecc, one_ecc2), fabs(ec - fabs(phi)) > TOL7);
 	lambda = atan2(x, y) / n;
 	
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
@@ -177,7 +175,7 @@ __kernel void pl_unproject_albers_equal_area_s(
 	
 	phi = (c - phi * phi) / (n + n);
 	
-	phi = select(select((float8)M_PI_2F, (float8)-M_PI_2F, phi < 0.f), asin(phi), fabs(phi) <= 1.f);
+	phi = select(copysign(M_PI_2F, phi), asin(phi), fabs(phi) <= 1.f);
 	lambda = atan2(x, y) / n;
 	
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));

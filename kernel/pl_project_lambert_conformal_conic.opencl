@@ -26,7 +26,7 @@ __kernel void pl_project_lambert_conformal_conic_e(
     
     float8 rho, sinLambda, cosLambda;
     
-    rho = c * pow(pl_tsfn(phi, sin(phi), ecc), (float8)n);
+    rho = c * pow(pl_tsfn(phi, sin(phi), ecc), n);
     sinLambda = sincos(lambda * n, &cosLambda);
     
     x = rho * sinLambda;
@@ -59,7 +59,7 @@ __kernel void pl_project_lambert_conformal_conic_s(
     
     float8 rho, sinLambda, cosLambda;
 
-    rho = c * pow(tan(M_PI_4F + .5f * phi), (float8)(-n));    
+    rho = c * pow(tan(M_PI_4F + .5f * phi), -n);    
     sinLambda = sincos(lambda * n, &cosLambda);
     
     x = rho * sinLambda;
@@ -98,16 +98,10 @@ __kernel void pl_unproject_lambert_conformal_conic_e(
         
     y = rho0 - y;
     
-    rho = hypot(x, y);
+    rho = copysign(hypot(x, y), n);
     
-    if (n < 0.f) {
-        rho = -rho;
-        x = -x;
-        y = -y;
-    }
-    
-    phi = select(select(-M_PI_2F, M_PI_2F, n > 0.f), pl_phi2(pow(rho / c, (float8)1.f/n), ecc), rho != 0.f);
-    lambda = select(0.f, atan2(x, y) / n, rho != 0.f);
+    phi = select(copysign(M_PI_2F, n), pl_phi2(pow(rho, 1.f/n), pow(c, 1.f/n), ecc), rho != 0.f);
+    lambda = atan2(x, y) / n;
     
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
 	xy_out[i].odd = degrees(phi);
@@ -139,16 +133,10 @@ __kernel void pl_unproject_lambert_conformal_conic_s(
     
     y = rho0 - y;
     
-    rho = hypot(x, y);
+    rho = copysign(hypot(x, y), n);
     
-    if (n < 0.f) {
-        rho = -rho;
-        x = -x;
-        y = -y;
-    }
-    
-    phi = select(select(-M_PI_2F, M_PI_2F, n > 0.f), M_PI_2F - 2.f * atan(pow(rho / c, (float8)1.f/n)), rho != 0.f);
-    lambda = select(0.f, atan2(x, y) / n, rho != 0.f);
+    phi = select(copysign(M_PI_2F, n), M_PI_2F - 2.f * atan2(pow(rho, 1.f/n), pow(c, 1.f/n)), rho != 0.f);
+    lambda = atan2(x, y) / n;
     
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
 	xy_out[i].odd = degrees(phi);

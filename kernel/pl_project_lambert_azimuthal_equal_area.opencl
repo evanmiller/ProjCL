@@ -30,14 +30,12 @@ __kernel void pl_project_lambert_azimuthal_equal_area_e(
     float8 phi    = radians(xy_in[i].odd);
 
     float8 x, y;
-    float8 b, q, sinLambda, cosLambda, sinPhi, sinB, cosB;
+    float8 b, sinLambda, cosLambda, sinPhi, sinB, cosB;
 
     sinLambda = sincos(lambda, &cosLambda);
     sinPhi = sin(phi);
 
-    q = pl_qsfn(sinPhi, ecc, one_ecc2);
-
-    sinB = q / qp;
+    sinB = pl_qsfn(sinPhi, ecc, one_ecc2) / qp;
     cosB = sqrt(1.f - sinB * sinB);
 
     b = sqrt(2.f / (1.f + sinB1 * sinB + cosB1 * cosB * cosLambda));
@@ -118,7 +116,7 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_e(
 
     float8 lambda, phi;
 
-    float8 cCe, sCe, q, rho, ab, beta;
+    float8 cCe, sCe, rho, beta;
         
     x /= dd;
     y *= dd;
@@ -126,9 +124,7 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_e(
     rho = hypot(x, y);
     sCe = sincos(2.f * asin(0.5f * rho / rq), &cCe);
     x *= sCe;
-    ab = cCe * sinB1 + y * sCe * cosB1 / rho;
-    beta = asin(ab);
-    q = qp * ab;
+    beta = asin(cCe * sinB1 + y * sCe * cosB1 / rho);
     y = rho * cosB1 * cCe - y * sinB1 * sCe;
 
     lambda = atan2(x, y);    
