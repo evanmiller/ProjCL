@@ -103,9 +103,9 @@ cl_int pl_project_grid_robinson(PLContext *pl_ctx, PLPointGridBuffer *src, PLPoi
 cl_int pl_unproject_grid_robinson(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
         float scale, float x0, float y0);
 cl_int pl_project_grid_transverse_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                           PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
+                                           PLSpheroid pl_ell, float scale, float x0, float y0, float lon0);
 cl_int pl_unproject_grid_transverse_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                             PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
+                                             PLSpheroid pl_ell, float scale, float x0, float y0, float lon0);
 cl_int pl_project_grid_winkel_tripel(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
                                      float scale, float x0, float y0, float lon0, float rlat1);
 cl_int pl_unproject_grid_winkel_tripel(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 

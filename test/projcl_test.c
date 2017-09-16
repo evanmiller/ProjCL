@@ -206,16 +206,10 @@ static test_params_t transverse_mercator_tests[] = {
     .lat0 = 0.0,
     .rlat1 = NAN,
     .rlat2 = NAN },
-  { .name = "Spherical, lon0=10deg",
+  { .name = "Spherical, off-center",
     .ell = PL_SPHEROID_SPHERE,
     .lon0 = 10.0,
     .lat0 = 0.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Spherical, lat0=10deg",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 0.0,
-    .lat0 = 10.0,
     .rlat1 = NAN,
     .rlat2 = NAN },
   { .name = "Ellipsoidal, centered",
@@ -224,16 +218,10 @@ static test_params_t transverse_mercator_tests[] = {
     .lat0 = 0.0,
     .rlat1 = NAN,
     .rlat2 = NAN },
-  { .name = "Ellipsoidal, lon0=10deg",
+  { .name = "Ellipsoidal, off-center",
     .ell = PL_SPHEROID_WGS_84,
     .lon0 = 10.0,
     .lat0 = 0.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Ellipsoidal, lat0=10deg",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 0.0,
-    .lat0 = 10.0,
     .rlat1 = NAN,
     .rlat2 = NAN }
 };
@@ -602,10 +590,10 @@ int test_transverse_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float
     for (i=0; i<sizeof(transverse_mercator_tests)/sizeof(test_params_t); i++) {
         test_params_t test = transverse_mercator_tests[i];
         error = pl_project_transverse_mercator(ctx, orig_buf, proj_points, 
-              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
+              test.ell, 1.0, 0.0, 0.0, test.lon0);
         proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
         error = pl_unproject_transverse_mercator(ctx, proj_buf, orig_points2, 
-                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
+                test.ell, 1.0, 0.0, 0.0, test.lon0);
         pl_unload_projection_data(proj_buf);
 
         consistency_failures += compare_points(orig_points, orig_points2, proj_points,

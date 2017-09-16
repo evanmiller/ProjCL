@@ -5,7 +5,6 @@ __kernel void pl_project_transverse_mercator_s (
     const unsigned int count,
 
     float scale, float x0, float y0,
-    float phi0,
     float lambda0,
     float8 kruger
 ) {
@@ -19,7 +18,7 @@ __kernel void pl_project_transverse_mercator_s (
     sinLambda = sincos(lambda, &cosLambda);
     
     tau = tan(phi);
-    y = atan2(tau, cosLambda) - phi0;
+    y = atan2(tau, cosLambda);
     x = asinh(sinLambda / hypot(tau, cosLambda));
     
     xy_out[i].even = x0 + scale * x;
@@ -32,14 +31,13 @@ __kernel void pl_unproject_transverse_mercator_s (
     const unsigned int count,
 
     float scale, float x0, float y0,
-    float phi0,
     float lambda0,
     float8 kruger
 ) {
     int i = get_global_id(0);
 
     float8 x = (xy_in[i].even - x0) / scale;
-    float8 y = (xy_in[i].odd - y0) / scale + phi0;
+    float8 y = (xy_in[i].odd - y0) / scale;
     
     float8 phi, lambda, sinhX, sinY, cosY;
     
@@ -63,7 +61,6 @@ __kernel void pl_project_transverse_mercator_e (
     float one_ecc2,
 
     float scale, float x0, float y0,
-    float phi0,
     float lambda0,
     float8 kruger
 ) {
@@ -88,7 +85,7 @@ __kernel void pl_project_transverse_mercator_e (
     xi = atan2(tau1, cosLambda);
     eta = asinh(sinLambda / hypot(tau1, cosLambda));
 
-    y = xi - phi0;
+    y = xi;
     y += kruger.s0 * sin(2.f * xi) * cosh(2.f * eta);
     y += kruger.s1 * sin(4.f * xi) * cosh(4.f * eta);
     y += kruger.s2 * sin(6.f * xi) * cosh(6.f * eta);
@@ -114,14 +111,13 @@ __kernel void pl_unproject_transverse_mercator_e (
     float one_ecc2,
 
     float scale, float x0, float y0,
-    float phi0,
     float lambda0,
     float8 kruger
 ) {
     int i = get_global_id(0);
 
     float8 x = (xy_in[i].even - x0) / scale;
-    float8 y = (xy_in[i].odd - y0) / scale + phi0;
+    float8 y = (xy_in[i].odd - y0) / scale;
 
     float8 phi, lambda, sinhX, sinY, cosY;
     float8 xi, eta;

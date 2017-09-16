@@ -69,9 +69,9 @@ cl_int pl_project_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float 
 cl_int pl_unproject_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
         float scale, float x0, float y0);
 cl_int pl_project_transverse_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out, 
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
+    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0);
 cl_int pl_unproject_transverse_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out, 
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
+    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0);
 cl_int pl_project_winkel_tripel(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
     float scale, float x0, float y0, float lon0, float rlat1);
 cl_int pl_unproject_winkel_tripel(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,

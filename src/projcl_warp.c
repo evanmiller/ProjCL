@@ -466,7 +466,7 @@ cl_int pl_unproject_grid_robinson(PLContext *pl_ctx, PLPointGridBuffer *src, PLP
 }
 
 cl_int pl_project_grid_transverse_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                      PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+                                      PLSpheroid pl_ell, float scale, float x0, float y0, float lon0) {
     cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "transverse_mercator", 1, pl_ell);
     if (kernel == NULL) {
         return CL_INVALID_KERNEL_NAME;
@@ -474,12 +474,12 @@ cl_int pl_project_grid_transverse_mercator(PLContext *pl_ctx, PLPointGridBuffer 
     
     cl_int retval = pl_enqueue_kernel_transverse_mercator(kernel, pl_ctx, src->grid, dst->grid,
                                                           src->width * src->height,
-                                                          pl_ell, scale, x0, y0, lon0, lat0);
+                                                          pl_ell, scale, x0, y0, lon0);
     return retval;
 }
 
 cl_int pl_unproject_grid_transverse_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+                                        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0) {
     cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "transverse_mercator", 0, pl_ell);
     if (kernel == NULL) {
         return CL_INVALID_KERNEL_NAME;
@@ -487,7 +487,7 @@ cl_int pl_unproject_grid_transverse_mercator(PLContext *pl_ctx, PLPointGridBuffe
     
     cl_int retval = pl_enqueue_kernel_transverse_mercator(kernel, pl_ctx, src->grid, dst->grid,
                                                           src->width * src->height,
-                                                          pl_ell, scale, x0, y0, lon0, lat0);
+                                                          pl_ell, scale, x0, y0, lon0);
     return retval;
 }
 

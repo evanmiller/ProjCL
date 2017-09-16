@@ -514,8 +514,7 @@ cl_int pl_enqueue_kernel_robinson(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy
 }
 
 cl_int pl_enqueue_kernel_transverse_mercator(cl_kernel kernel, PLContext *pl_ctx, cl_mem xy_in, cl_mem xy_out, size_t count,
-                                         PLSpheroid pl_ell, float scale, float x0, float y0,
-                                         float lon0, float lat0) {
+                                         PLSpheroid pl_ell, float scale, float x0, float y0, float lon0) {
     cl_int error = CL_SUCCESS;
     cl_int argc = 0;
     size_t vec_count = ck_padding(count, PL_FLOAT_VECTOR_SIZE) / PL_FLOAT_VECTOR_SIZE;
@@ -525,16 +524,11 @@ cl_int pl_enqueue_kernel_transverse_mercator(cl_kernel kernel, PLContext *pl_ctx
     
     float k0 = scale * info.major_axis * info.kruger_a;
     float lambda0 = lon0 * DEG_TO_RAD;
-    float phi0 = lat0 * DEG_TO_RAD;
-    
-    // float ml0 = _pl_mlfn(phi0, sin(phi0), cos(phi0), info.en);
     
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &k0);
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &x0);
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &y0);
-    error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &phi0);
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &lambda0);
-    // error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &ml0);
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float8), info.kruger_coef);
     if (error != CL_SUCCESS)
         return error;

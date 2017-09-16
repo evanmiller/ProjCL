@@ -297,13 +297,13 @@ cl_int pl_unproject_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, floa
 }
 
 cl_int pl_project_transverse_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out, 
-                                      PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+                                      PLSpheroid pl_ell, float scale, float x0, float y0, float lon0) {
     cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "transverse_mercator", 1, pl_ell);
     if (kernel == NULL)
         return CL_INVALID_KERNEL_NAME;
     
     cl_int error = pl_enqueue_kernel_transverse_mercator(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
-                                                     pl_ell, scale, x0, y0, lon0, lat0);
+                                                     pl_ell, scale, x0, y0, lon0);
     if (error != CL_SUCCESS)
         return error;
     
@@ -311,13 +311,13 @@ cl_int pl_project_transverse_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_
 }
 
 cl_int pl_unproject_transverse_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out, 
-                                        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+                                        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0) {
     cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "transverse_mercator", 0, pl_ell);
     if (kernel == NULL)
         return CL_INVALID_KERNEL_NAME;
     
     cl_int error = pl_enqueue_kernel_transverse_mercator(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
-                                                     pl_ell, scale, x0, y0, lon0, lat0);
+                                                     pl_ell, scale, x0, y0, lon0);
     if (error != CL_SUCCESS)
         return error;
     
