@@ -599,7 +599,7 @@ int test_transverse_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float
         consistency_failures += compare_points(orig_points, orig_points2, proj_points,
                 TEST_POINTS, test.name);
         sprintf_proj4(orig_string, "latlong", test);
-        sprintf_proj4(proj_string, "tmerc", test);
+        sprintf_proj4(proj_string, test.ell == PL_SPHEROID_SPHERE ? "tmerc" : "etmerc", test);
         consistency_failures += compare_proj4_fwd(orig_points, proj_points, orig_string, proj_string);
         consistency_failures += compare_proj4_inv(proj_points, orig_points2, proj_string, orig_string);
     }
