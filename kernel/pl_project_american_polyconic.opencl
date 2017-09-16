@@ -8,9 +8,7 @@ __kernel void pl_project_american_polyconic_s(
     float y0,
 
 	float phi0,
-	float ml0,
-	float lambda0,
-	float8 en)
+	float lambda0)
 {
 	int i = get_global_id(0);
 
@@ -39,9 +37,7 @@ __kernel void pl_unproject_american_polyconic_s(
     float y0,
 
 	float phi0,
-	float ml0,
-	float lambda0,
-	float8 en)
+	float lambda0)
 {
 	int i = get_global_id(0);
 	
@@ -84,8 +80,8 @@ __kernel void pl_project_american_polyconic_e(
     float y0,
 
 	float phi0,
-	float ml0,
 	float lambda0,
+	float ml0,
 	float8 en)
 {
 	int i = get_global_id(0);
@@ -120,8 +116,8 @@ __kernel void pl_unproject_american_polyconic_e(
     float y0,
 
 	float phi0,
-	float ml0,
 	float lambda0,
+	float ml0,
 	float8 en)
 {
 	int i = get_global_id(0);

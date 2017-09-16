@@ -294,9 +294,11 @@ cl_int pl_enqueue_kernel_american_polyconic(cl_kernel kernel, PLContext *pl_ctx,
     error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &x0);
     error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &y0);
 	error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &phi0);
-	error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &ml0);
 	error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &lambda0);
-	error |= clSetKernelArg(kernel, offset++, sizeof(cl_float8), info.en);
+    if (!_pl_spheroid_is_spherical(pl_ell)) {
+        error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &ml0);
+        error |= clSetKernelArg(kernel, offset++, sizeof(cl_float8), info.en);
+    }
 	if (error != CL_SUCCESS) {
 		return error;
 	}
