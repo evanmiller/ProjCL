@@ -198,7 +198,8 @@ cl_int pl_enqueue_kernel_albers_equal_area(cl_kernel kernel, PLContext *pl_ctx, 
 	float lam0 = lon0 * DEG_TO_RAD;
     float k0 = scale * info.major_axis;
     
-	float c, dd, rho0, n, sinphi, cosphi;
+	float c, dd, rho0, n;
+    double sinphi, cosphi;
 	
 	int secant; /* secant cone */
 	
@@ -296,13 +297,10 @@ cl_int pl_enqueue_kernel_lambert_azimuthal_equal_area(cl_kernel kernel, PLContex
 	float lambda0 = lon0 * DEG_TO_RAD;
     float k0 = scale * info.major_axis;
     float qp = _pl_qsfn(1.f, info.ecc, info.one_ecc2);
-    float rq = sqrtf(0.5f * qp);
-    float sinPhi = sin(phi0);
+
+    double sinPhi = sin(phi0);
     float sinB1 = _pl_qsfn(sinPhi, info.ecc, info.one_ecc2) / qp;
-    float cosB1 = sqrtf(1.f - sinB1 * sinB1);
-    float dd = cos(phi0) / (sqrtf(1.f - info.ecc2 * sinPhi * sinPhi) * rq * cosB1);
-    float ymf = rq / dd;
-    float xmf = rq * dd;
+    float cosB1 = sqrt(1.0 - sinB1 * sinB1);
 
 	error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &k0);
     error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &x0);
@@ -313,6 +311,11 @@ cl_int pl_enqueue_kernel_lambert_azimuthal_equal_area(cl_kernel kernel, PLContex
 	error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &sinB1);
     error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &cosB1);
     if (!_pl_spheroid_is_spherical(pl_ell)) {
+        float rq = sqrtf(0.5f * qp);
+        float dd = cos(phi0) / (sqrt(1.0 - info.ecc2 * sinPhi * sinPhi) * rq * cosB1);
+        float ymf = rq / dd;
+        float xmf = rq * dd;
+
         error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &rq);
         error |= clSetKernelArg(kernel, offset++, sizeof(cl_float4), info.apa);
 
