@@ -242,7 +242,7 @@ static test_params_t winkel_tripel_tests[] = {
 };
 
 int compile_module(PLContext *ctx, unsigned int module, char *name);
-int compare_points(float *points1, float *points2, int count, char *name);
+int compare_points(const float *points1, const float *points2, const float *ref_points, int count, char *name);
 int test_albers_equal_area(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 int test_american_polyconic(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 int test_lambert_azimuthal_equal_area(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
@@ -253,7 +253,7 @@ int test_robinson(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_poin
 int test_transverse_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 int test_winkel_tripel(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 
-int compare_proj4_inv(float *proj_points, float *orig_points, char *desc1, char *desc2) {
+int compare_proj4_inv(const float *proj_points, const float *orig_points, const char *desc1, const char *desc2) {
     int failures = 0;
 #ifdef HAVE_PROJ4
     double points_proj4[2*TEST_POINTS];
@@ -293,13 +293,13 @@ int compare_proj4_inv(float *proj_points, float *orig_points, char *desc1, char 
       orig_points_proj4[2*i+1] = points_proj4[2*i+1] * RAD_TO_DEG;
     }
 
-    failures = compare_points(orig_points_proj4, orig_points, 
+    failures = compare_points(orig_points_proj4, orig_points, proj_points,
             TEST_POINTS, "...inverse same as Proj.4");
 #endif
     return failures;
 }
 
-int compare_proj4_fwd(float *orig_points, float *proj_points, char *desc1, char *desc2) {
+int compare_proj4_fwd(const float *orig_points, const float *proj_points, const char *desc1, const char *desc2) {
     int failures = 0;
 #ifdef HAVE_PROJ4
     double points_proj4[2*TEST_POINTS];
@@ -339,7 +339,7 @@ int compare_proj4_fwd(float *orig_points, float *proj_points, char *desc1, char 
       proj_points_proj4[2*i+1] = points_proj4[2*i+1];
     }
 
-    failures = compare_points(proj_points_proj4, proj_points, 
+    failures = compare_points(proj_points_proj4, proj_points, orig_points,
             TEST_POINTS, "...same as Proj.4");
 #endif
     return failures;
@@ -384,7 +384,7 @@ int test_albers_equal_area(PLContext *ctx,
                 test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
         pl_unload_projection_data(proj_buf);
 
-        consistency_failures += compare_points(orig_points, orig_points2, 
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
                 TEST_POINTS, test.name);
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "aea", test);
@@ -415,7 +415,7 @@ int test_american_polyconic(PLContext *ctx,
                 test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
         pl_unload_projection_data(proj_buf);
 
-        consistency_failures += compare_points(orig_points, orig_points2, 
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
                 TEST_POINTS, test.name);
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "poly", test);
@@ -446,7 +446,7 @@ int test_lambert_azimuthal_equal_area(PLContext *ctx,
                 test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
         pl_unload_projection_data(proj_buf);
 
-        consistency_failures += compare_points(orig_points, orig_points2, 
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
                 TEST_POINTS, test.name);
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "laea", test);
@@ -476,7 +476,7 @@ int test_lambert_conformal_conic(PLContext *ctx,
                 test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
         pl_unload_projection_data(proj_buf);
 
-        consistency_failures += compare_points(orig_points, orig_points2, 
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
                 TEST_POINTS, test.name);
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "lcc", test);
@@ -505,7 +505,7 @@ int test_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_poin
                 test.ell, 1.0, 0.0, 0.0);
         pl_unload_projection_data(proj_buf);
 
-        consistency_failures += compare_points(orig_points, orig_points2, 
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
                 TEST_POINTS, test.name);
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "merc", test);
@@ -540,7 +540,7 @@ int test_oblique_stereographic(PLContext *ctx, PLProjectionBuffer *orig_buf, flo
         }
         pl_unload_projection_data(proj_buf);
 
-        consistency_failures += compare_points(orig_points, orig_points2, 
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
                 TEST_POINTS, test.name);
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "sterea", test);
@@ -567,7 +567,7 @@ int test_robinson(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_poin
         error = pl_unproject_robinson(ctx, proj_buf, orig_points2, 1.0, 0.0, 0.0);
         pl_unload_projection_data(proj_buf);
 
-        consistency_failures += compare_points(orig_points, orig_points2, 
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
                 TEST_POINTS, test.name);
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "robin", test);
@@ -596,7 +596,7 @@ int test_transverse_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float
                 test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
         pl_unload_projection_data(proj_buf);
 
-        consistency_failures += compare_points(orig_points, orig_points2, 
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
                 TEST_POINTS, test.name);
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "tmerc", test);
@@ -627,7 +627,7 @@ int test_winkel_tripel(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig
                 1.0, 0.0, 0.0, test.lon0, acos(M_2_PI) * RAD_TO_DEG);
         pl_unload_projection_data(proj_buf);
 
-        consistency_failures += compare_points(orig_points, orig_points2, 
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
                 TEST_POINTS, test.name);
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "wintri", test);
@@ -637,36 +637,41 @@ int test_winkel_tripel(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig
     return consistency_failures;
 }
 
-int compare_points(float *points1, float *points2, int count, char *name) {
+int compare_points(const float *points1, const float *points2, const float *ref_points, int count, char *name) {
     int i;
     int failures = 0;
     printf("-- %s... ", name);
     double max_delta_x = 0.0;
     double max_delta_y = 0.0;
-    double max_delta_x_lat, max_delta_x_lon;
-    double max_delta_y_lat, max_delta_y_lon;
+    int max_delta_x_i = 0, max_delta_y_i = 0;
     for (i=0; i<count; i++) {
         double delta_x = fabs(points1[2*i] - points2[2*i]);
         double delta_y = fabs(points1[2*i+1] - points2[2*i+1]);
-        double norm = sqrt(points1[2*i] * points1[2*i] + points1[2*i+1] * points1[2*i+1]);
+        double norm = hypot(points1[2*i], points1[2*i+1]);
         if (delta_x / norm > TOL || delta_y / norm > TOL) {
             failures++;
             if (delta_x > max_delta_x) {
                 max_delta_x = delta_x;
-                max_delta_x_lon = points1[2*i];
-                max_delta_x_lat = points1[2*i+1];
+                max_delta_x_i = i;
             }
             if (delta_y > max_delta_y) {
                 max_delta_y = delta_y;
-                max_delta_y_lon = points1[2*i];
-                max_delta_y_lat = points1[2*i+1];
+                max_delta_y_i = i;
             }
         }
     }
     if (failures) {
         printf("%d failures\n", failures);
-        printf("**** Max longitudinal error: %lf at (%lf, %lf)\n", max_delta_x, max_delta_x_lon, max_delta_x_lat);
-        printf("**** Max latitudinal error: %lf at (%lf, %lf)\n", max_delta_y, max_delta_y_lon, max_delta_y_lat);
+        printf("**** Max longitudinal error: (%f, %f) => (%f, %f)\n"
+               "                             (%f, %f) => (%f, %f) [%lf]\n",
+               ref_points[2*max_delta_x_i], ref_points[2*max_delta_x_i+1], points1[2*max_delta_x_i], points1[2*max_delta_x_i+1],
+               ref_points[2*max_delta_x_i], ref_points[2*max_delta_x_i+1], points2[2*max_delta_x_i], points2[2*max_delta_x_i+1],
+               max_delta_x);
+        printf("**** Max latitudinal error: (%f, %f) => (%f, %f)\n"
+               "                            (%f, %f) => (%f, %f) [%lf]\n",
+               ref_points[2*max_delta_y_i], ref_points[2*max_delta_y_i+1], points1[2*max_delta_y_i], points1[2*max_delta_y_i+1],
+               ref_points[2*max_delta_y_i], ref_points[2*max_delta_y_i+1], points2[2*max_delta_y_i], points2[2*max_delta_y_i+1],
+               max_delta_y);
     } else {
         printf("ok\n");
     }
