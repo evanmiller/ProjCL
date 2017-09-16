@@ -74,7 +74,7 @@ float8 pl_msfn(float8 sinphi, float8 cosphi, float es) {
 
 float8 pl_tsfn(float8 phi, float8 sinphi, float e) {
 	float8 con = e * sinphi;
-	return (tan(M_PI_4F - 0.5f * phi) / pow((1.f - con) / (1.f + con), .5f * e));
+	return (tan(M_PI_4F - 0.5f * phi) / powr((1.f - con) / (1.f + con), .5f * e));
 }
 
 float8 pl_qsfn(float8 sinphi, float e, float one_es) {
@@ -90,8 +90,8 @@ float8 pl_phi2(float8 ts_num, float ts_den, float e) {
 	Phi = M_PI_2F - 2.f * atan2(ts_num, ts_den);
 	for (i = I_ITER; i; --i) {
 		con = e * sin(Phi);
-		dphi = M_PI_2F - 2.f * atan2(ts_num * pow(1.f - con, eccnth),
-                                     ts_den * pow(1.f + con, eccnth)) - Phi;
+		dphi = M_PI_2F - 2.f * atan2(ts_num * powr(1.f - con, eccnth),
+                                     ts_den * powr(1.f + con, eccnth)) - Phi;
 		Phi += dphi;
 		if (all(fabs(dphi) <= ITOL))
 			break;

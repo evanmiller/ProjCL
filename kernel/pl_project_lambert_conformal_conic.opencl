@@ -26,7 +26,7 @@ __kernel void pl_project_lambert_conformal_conic_e(
     
     float8 rho, sinLambda, cosLambda;
     
-    rho = c * pow(pl_tsfn(phi, sin(phi), ecc), n);
+    rho = c * powr(pl_tsfn(phi, sin(phi), ecc), n);
     sinLambda = sincos(lambda * n, &cosLambda);
     
     x = rho * sinLambda;
@@ -59,7 +59,7 @@ __kernel void pl_project_lambert_conformal_conic_s(
     
     float8 rho, sinLambda, cosLambda;
 
-    rho = c * pow(tan(M_PI_4F + .5f * phi), -n);    
+    rho = c * powr(tan(M_PI_4F + .5f * phi), -n);    
     sinLambda = sincos(lambda * n, &cosLambda);
     
     x = rho * sinLambda;

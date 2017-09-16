@@ -2,7 +2,7 @@ float8 srat(float8 esinp, float exp1);
 float8 phi_sph2ell(float8 phi, float ecc, float k0, float c0);
 
 float8 srat(float8 esinp, float exp1) {
-    return pow((1.f-esinp)/(1.f+esinp), exp1);
+    return powr((1.f-esinp)/(1.f+esinp), exp1);
 }
 
 float8 phi_sph2ell(float8 phi, float ecc, float k0, float c0) {
@@ -11,7 +11,7 @@ float8 phi_sph2ell(float8 phi, float ecc, float k0, float c0) {
     float8 phi_ell;
     
     i = OBLIQUE_STEREOGRAPHIC_N_ITER;
-    num = pow(tan(0.5f * phi + M_PI_4F)/k0, 1.f/c0);
+    num = powr(tan(0.5f * phi + M_PI_4F)/k0, 1.f/c0);
     phi_ell = phi;
 
     do {
@@ -49,7 +49,7 @@ __kernel void pl_project_oblique_stereographic_e(
 
     /* Project ellipsoid onto sphere */
     float8 lambda = c0 * lambda_ell;
-    float8 phi = 2.f * atan(k0 * pow(tan(.5f * phi_ell + M_PI_4F), c0) *
+    float8 phi = 2.f * atan(k0 * powr(tan(.5f * phi_ell + M_PI_4F), c0) *
             srat(ecc * sin(phi_ell), .5f * c0 * ecc) ) - M_PI_2F;
 
     /* Project sphere onto plane */
@@ -104,8 +104,7 @@ __kernel void pl_unproject_oblique_stereographic_e(
     /* Project plane onto sphere */
     phi = asin(select(cosPhiC * sinPhiC0 + y * sinPhiC * cosPhiC0 / rho,
                 sinPhiC0, rho == 0.f));
-    lambda = select(atan2(x * sinPhiC, rho * cosPhiC0 * cosPhiC - y * sinPhiC0 * sinPhiC),
-                 0.f, rho == 0.f);
+    lambda = atan2(x * sinPhiC, rho * cosPhiC0 * cosPhiC - y * sinPhiC0 * sinPhiC);
 
     /* Project sphere onto ellipsoid */
     lambda = lambda / c0;
