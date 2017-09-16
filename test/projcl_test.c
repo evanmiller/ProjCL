@@ -364,8 +364,8 @@ int main(int argc, char **argv) {
     PLProjectionBuffer *orig_buf = NULL;
 
     for (i=0; i<TEST_POINTS; i++) {
-        orig_points[2*i] = 45 * sin(2 * M_PI * i / TEST_POINTS);
-        orig_points[2*i+1] = 45 * cos(2 * M_PI * i / TEST_POINTS);
+        orig_points[2*i] = -60.0 + 120.0 * (i%100) / (TEST_POINTS-1);
+        orig_points[2*i+1] = -60.0 + 120.0 * (i/100) / (TEST_POINTS-1);
     }
 
     orig_buf = pl_load_projection_data(ctx, orig_points, TEST_POINTS, 1, &error);

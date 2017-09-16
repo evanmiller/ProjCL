@@ -49,7 +49,7 @@ __kernel void pl_unproject_american_polyconic_s(
     float8 r = y * y + x * x;
 	
 	float8 dPhi, tanphi;
-    int iter = 4;
+    int iter = AMERICAN_POLYCONIC_N_ITER;
 	
 	phi = y;
 
@@ -130,7 +130,7 @@ __kernel void pl_unproject_american_polyconic_e(
 	float8 r = y * y + x * x;
 	
 	float8 c, sinphi, cosphi, sincosphi, ml, mlb, mlp, dPhi;
-    int iter = 4;
+    int iter = AMERICAN_POLYCONIC_N_ITER;
 		
     phi = y;
 
