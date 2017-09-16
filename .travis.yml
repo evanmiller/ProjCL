@@ -4,6 +4,11 @@ os:
     - osx
     - linux
 
+osx_image:
+    - xcode8.3
+    - xcode7.3
+    - xcode6.4
+
 addons:
     apt:
         packages:
