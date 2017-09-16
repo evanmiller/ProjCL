@@ -20,7 +20,7 @@
 #ifdef __linux__
 #include "cblas.h"
 typedef int __CLPK_integer;
-typedef float __CLPK_real;
+typedef double __CLPK_doublereal;
 #endif
 
 #define RAD_TO_DEG	57.29577951308232
@@ -39,13 +39,13 @@ typedef float __CLPK_real;
 #define SEC_TO_RAD 4.84813681109535993589914102357e-6
 
 struct pl_datum_info {
-    float dx;
-    float dy;
-    float dz;
-    float ex;
-    float ey;
-    float ez;
-    float ppm;
+    double dx;
+    double dy;
+    double dz;
+    double ex;
+    double ey;
+    double ez;
+    double ppm;
 };
 
 /* Source: "WGS 84 Implementation Manual" */
@@ -109,10 +109,12 @@ static struct pl_datum_info pl_datum_params[] = {
 };
 
 struct pl_matrix {
-    float  elements[4][4];
+    double elements[4][4];
 };
 
-static struct pl_matrix pl_affine_transform_make(float Rx, float Ry, float Rz, float M, float Dx, float Dy, float Dz) {
+static struct pl_matrix pl_affine_transform_make(
+        double Rx, double Ry, double Rz, double M,
+        double Dx, double Dy, double Dz) {
     /* store in column-major order */
     struct pl_matrix matrix = {
         .elements = {
@@ -133,26 +135,20 @@ static float _pl_mlfn(float phi, float sphi, float cphi, float *en) {
 											   + sphi*(en[3] + sphi*en[4]))));
 }
 
-static float _pl_qsfn(float sinphi, float e, float one_es) {
-	float con;
-	
-	if (e < EPS7)
-		return (sinphi + sinphi);
-	
-	con = e * sinphi;
-	return (one_es * (sinphi / (1.f - con * con) -
-					  (.5f / e) * log((1.f - con) / (1.f + con))));
+static double _pl_qsfn(double sinphi, double e, double one_es) {
+	double con = e * sinphi;
+	return (one_es * (sinphi / (1.0 - con * con) -
+					  (.5 / e) * log((1.0 - con) / (1.0 + con))));
 }
 
-static float _pl_msfn(float sinphi, float cosphi, float es) {
-	return (cosphi / sqrt(1.f - es * sinphi * sinphi));
+static double _pl_msfn(double sinphi, double cosphi, double es) {
+	return (cosphi / sqrt(1.0 - es * sinphi * sinphi));
 }
 
-static float _pl_tsfn(float phi, float sinphi, float e) {
-	sinphi *= e;
-	return (tan(.5f * (M_PI_2 - phi)) /
-            pow((1.f - sinphi) / (1.f + sinphi), .5f * e)
-            );
+static double _pl_tsfn(double phi, double sinphi, double e) {
+	double con = e * sinphi;
+	return (tan(.5 * (M_PI_2 - phi)) /
+            pow((1.0 - con) / (1.0 + con), .5 * e));
 }
 
 static void _pl_authset(float es, float *APA) {
@@ -238,12 +234,12 @@ cl_int pl_enqueue_kernel_albers_equal_area(cl_kernel kernel, PLContext *pl_ctx, 
 		dd = 1. / n;
 		rho0 = dd * sqrt(c - 2 * n * sin(phi0));		
 	} else {
-		float ml1, m1;
+		double ml1, m1;
 		
 		m1 = _pl_msfn(sinphi, cosphi, info.ecc2);
 		ml1 = _pl_qsfn(sinphi, info.ecc, info.one_ecc2);
 		if (secant) { 
-			float ml2, m2;
+			double ml2, m2;
 			
 			sinphi = sin(phi2);
 			cosphi = cos(phi2);
@@ -286,7 +282,7 @@ cl_int pl_enqueue_kernel_american_polyconic(cl_kernel kernel, PLContext *pl_ctx,
 	float phi0 = lat0 * DEG_TO_RAD;
 	float lambda0 = lon0 * DEG_TO_RAD;
 	
-	float ml0 = (float)_pl_mlfn(phi0, sinf(phi0), cosf(phi0), info.en);
+	float ml0 = _pl_mlfn(phi0, sinf(phi0), cosf(phi0), info.en);
 	
 	float k0 = scale * info.major_axis;
 	
@@ -392,7 +388,7 @@ cl_int pl_enqueue_kernel_lambert_conformal_conic(cl_kernel kernel, PLContext *pl
         c = cosphi1 * pow(tan(M_PI_4 + .5 * phi1), n) / n;
         rho0 = c * pow(tan(M_PI_4 + .5 * phi0), -n);
     } else {
-        float m1, ml1;
+        double m1, ml1;
         
         m1 = _pl_msfn(sinphi1, cosphi1, info.ecc2);
         ml1 = _pl_tsfn(phi1, sinphi1, info.ecc);
@@ -760,8 +756,8 @@ cl_int pl_run_kernel_geodesic_to_cartesian(cl_kernel g2c_kernel, PLContext *pl_c
  */
 cl_int pl_run_kernel_transform_cartesian(cl_kernel transform_kernel, PLContext *pl_ctx, PLDatumShiftBuffer *pl_buf,
                                          PLDatum src_datum, PLDatum dst_datum) {
-    float Rx1, Ry1, Rz1, M1, Dx1, Dy1, Dz1;
-    float Rx2, Ry2, Rz2, M2, Dx2, Dy2, Dz2;
+    double Rx1, Ry1, Rz1, M1, Dx1, Dy1, Dz1;
+    double Rx2, Ry2, Rz2, M2, Dx2, Dy2, Dz2;
     
     cl_int error = CL_SUCCESS;
     int argc = 0;
@@ -791,30 +787,30 @@ cl_int pl_run_kernel_transform_cartesian(cl_kernel transform_kernel, PLContext *
     __CLPK_integer info;
     
     __CLPK_integer ipiv[4];
-    __CLPK_real work[4];
+    __CLPK_doublereal work[4];
     __CLPK_integer work_n = 4;
     
-    sgetrf_(&n, &n, &matrix2.elements[0][0], &n, ipiv, &info);
+    dgetrf_(&n, &n, &matrix2.elements[0][0], &n, ipiv, &info);
     if (info != 0) {
         return info;
     }
     
-    sgetri_(&n, &matrix2.elements[0][0], &n, ipiv, work, &work_n, &info);
+    dgetri_(&n, &matrix2.elements[0][0], &n, ipiv, work, &work_n, &info);
     if (info != 0) {
         return info;
     }
     
-    __CLPK_real alpha = 1.f;
-    __CLPK_real beta = 0.f;
-    __CLPK_real result_matrix[4][4];
+    __CLPK_doublereal alpha = 1.0;
+    __CLPK_doublereal beta = 0.0;
+    __CLPK_doublereal result_matrix[4][4];
     
     /* Multiply the source matrix with the inverse destination matrix */
-    cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, alpha,
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, n, n, n, alpha,
           &matrix2.elements[0][0], n,
           &matrix1.elements[0][0], n,
           beta, &result_matrix[0][0], n);
     
-    /* transpose the result */
+    /* transpose the result and store single-precision */
     float tmatrix[4][4];
     int i, j;
     for (i=0; i<4; i++) {
