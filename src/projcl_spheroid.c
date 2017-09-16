@@ -16,6 +16,14 @@
 #define C68 .00569661458333333333
 #define C88 .3076171875
 
+#define P00 .33333333333333333333
+#define P01 .17222222222222222222
+#define P02 .10257936507936507936
+#define P10 .06388888888888888888
+#define P11 .06640211640211640211
+#define P20 .01641501294219154443
+
+
 static struct pl_spheroid_info_s pl_spheroid_params[] = {
     { 6370997.0,   6370997.0 },  /* SPHEROID */ 
     { 6378137.0,   6356752.31424 },  /* WGS 84 */
@@ -54,9 +62,20 @@ PLSpheroidInfo _pl_get_spheroid_info(PLSpheroid pl_ell) {
 	double t, es = info.ecc2;
 	info.en[0] = C00 - es * (C02 + es * (C04 + es * (C06 + es * C08)));
 	info.en[1] = es * (C22 - es * (C04 + es * (C06 + es * C08)));
+
+    info.apa[0] = es * P00;
+
 	info.en[2] = (t = es * es) * (C44 - es * (C46 + es * C48));
+
+    info.apa[0] += t * P01;
+    info.apa[1] = t * P10; 
+
 	info.en[3] = (t *= es) * (C66 - es * C68);
 	info.en[4] = t * es * C88;
+
+    info.apa[0] += t * P02;
+    info.apa[1] += t * P11;
+    info.apa[2] = t * P20;
 
     double n = (info.major_axis - info.minor_axis) / (info.major_axis + info.minor_axis);
     double n2 = n * n;
@@ -76,7 +95,7 @@ PLSpheroidInfo _pl_get_spheroid_info(PLSpheroid pl_ell) {
     info.kruger_coef[5] = 1.0/48.0 * n2 + 1.0 / 15.0 * n3 - 437.0 / 1440.0 * n4;
     info.kruger_coef[6] = 17.0/480.0 * n3 - 37.0/840.0 * n4;
     info.kruger_coef[7] = 4397.0 / 161280.0 * n4;
-	
+
 	return info;
 }
 

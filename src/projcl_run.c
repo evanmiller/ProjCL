@@ -28,14 +28,6 @@ typedef double __CLPK_doublereal;
 
 #define EPS7 1.e-7
 
-#define P00 .33333333333333333333
-#define P01 .17222222222222222222
-#define P02 .10257936507936507936
-#define P10 .06388888888888888888
-#define P11 .06640211640211640211
-#define P20 .01641501294219154443
-
-
 #define SEC_TO_RAD 4.84813681109535993589914102357e-6
 
 struct pl_datum_info {
@@ -149,18 +141,6 @@ static double _pl_tsfn(double phi, double sinphi, double e) {
 	double con = e * sinphi;
 	return (tan(.5 * (M_PI_2 - phi)) /
             pow((1.0 - con) / (1.0 + con), .5 * e));
-}
-
-static void _pl_authset(float es, float *APA) {
-    float t;
-    APA[0] = es * P00;
-    t = es * es; 
-    APA[0] += t * P01;
-    APA[1] = t * P10; 
-    t *= es;
-    APA[0] += t * P02;
-    APA[1] += t * P11;
-    APA[2] = t * P20;
 }
 
 static cl_int _pl_set_kernel_args(cl_kernel kernel, cl_mem xy_in, cl_mem xy_out, size_t count, 
@@ -312,10 +292,6 @@ cl_int pl_enqueue_kernel_lambert_azimuthal_equal_area(cl_kernel kernel, PLContex
 	PLSpheroidInfo info = _pl_get_spheroid_info(pl_ell);
 	error = _pl_set_kernel_args(kernel, xy_in, xy_out, count, &info, &offset);
     
-    float apa[4];
-    
-    _pl_authset(info.ecc2, apa);
-	
 	float phi0 = lat0 * DEG_TO_RAD;
 	float lambda0 = lon0 * DEG_TO_RAD;
     float k0 = scale * info.major_axis;
@@ -338,7 +314,7 @@ cl_int pl_enqueue_kernel_lambert_azimuthal_equal_area(cl_kernel kernel, PLContex
     error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &cosB1);
     if (!_pl_spheroid_is_spherical(pl_ell)) {
         error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &rq);
-        error |= clSetKernelArg(kernel, offset++, sizeof(cl_float4), apa);
+        error |= clSetKernelArg(kernel, offset++, sizeof(cl_float4), info.apa);
 
         error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &dd);
         error |= clSetKernelArg(kernel, offset++, sizeof(cl_float), &xmf);
