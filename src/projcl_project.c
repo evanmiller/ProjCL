@@ -12,18 +12,24 @@
 #include "projcl_spheroid.h"
 #include <stdlib.h>
 #include <math.h>
+#include <sys/time.h>
 
 #define DEG_TO_RAD	.0174532925199432958
 
 PLProjectionBuffer *pl_load_projection_data(PLContext *pl_ctx, const float *xy, int count, int copy, int *outError) {
 	float *xy_pad = NULL;
-	PLProjectionBuffer *pl_buf = NULL;
-	
 	int xy_pad_count = ck_padding(count, PL_FLOAT_VECTOR_SIZE);
-    
+
+	PLProjectionBuffer *pl_buf = NULL;
 	cl_int error = CL_SUCCESS;
 	
     int needs_free = 0;
+
+    struct timeval start_time, end_time;
+    gettimeofday(&start_time, NULL);
+
+    pl_ctx->last_time = NAN;
+
     if (xy_pad_count == count) {
         xy_pad = (float *)xy;
     } else {
@@ -68,6 +74,11 @@ cleanup:
 	
 	if (outError != NULL)
 		*outError = CL_SUCCESS;
+
+    gettimeofday(&end_time, NULL);
+
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
 	
 	return pl_buf;
 }
@@ -84,91 +95,152 @@ void pl_unload_projection_data(PLProjectionBuffer *pl_buf) {
 cl_int pl_project_albers_equal_area(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
 									PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
                                     float rlat1, float rlat2) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "albers_equal_area", 1, pl_ell);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_albers_equal_area(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                        pl_ell, scale, x0, y0, lon0, lat0, rlat1, rlat2);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_unproject_albers_equal_area(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
 									  PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0, float rlat1, float rlat2) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "albers_equal_area", 0, pl_ell);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_albers_equal_area(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                        pl_ell, scale, x0, y0, lon0, lat0, rlat1, rlat2);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_project_american_polyconic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
                                      PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "american_polyconic", 1, pl_ell);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_american_polyconic(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                         pl_ell, scale, x0, y0, lon0, lat0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_unproject_american_polyconic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
                                        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "american_polyconic", 0, pl_ell);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_american_polyconic(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                     pl_ell, scale, x0, y0, lon0, lat0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_project_lambert_azimuthal_equal_area(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
                                                PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+    struct timeval start_time, end_time;
     cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "lambert_azimuthal_equal_area", 1, pl_ell);
     if (kernel == NULL)
         return CL_INVALID_KERNEL_NAME;
+
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
 
     cl_int error = pl_enqueue_kernel_lambert_azimuthal_equal_area(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                                   pl_ell, scale, x0, y0, lon0, lat0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_unproject_lambert_azimuthal_equal_area(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
                                                  PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+    struct timeval start_time, end_time;
     cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "lambert_azimuthal_equal_area", 0, pl_ell);
     if (kernel == NULL)
         return CL_INVALID_KERNEL_NAME;
     
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
     cl_int error = pl_enqueue_kernel_lambert_azimuthal_equal_area(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                               pl_ell, scale, x0, y0, lon0, lat0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_project_lambert_conformal_conic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
                                           PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
                                           float rlat1, float rlat2) {
+    struct timeval start_time, end_time;
     if (fabs((rlat1 + rlat2) * DEG_TO_RAD) < 1.e-7) {
         /* With symmetrical standard parallels the LCC equations break down.
          * But, in this case it reduces to a Mercator projection with an appropriate shift. */
@@ -182,17 +254,27 @@ cl_int pl_project_lambert_conformal_conic(PLContext *pl_ctx, PLProjectionBuffer 
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
     
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
     cl_int error = pl_enqueue_kernel_lambert_conformal_conic(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                          pl_ell, scale, x0, y0, lon0, lat0, rlat1, rlat2);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_unproject_lambert_conformal_conic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
                                             PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
                                             float rlat1, float rlat2) {
+    struct timeval start_time, end_time;
     if (fabs((rlat1 + rlat2) * DEG_TO_RAD) < 1.e-7) {
         double cosphi1 = cos(rlat1 * DEG_TO_RAD);
         PLSpheroidInfo info = _pl_get_spheroid_info(pl_ell);
@@ -204,150 +286,259 @@ cl_int pl_unproject_lambert_conformal_conic(PLContext *pl_ctx, PLProjectionBuffe
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
     
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
     cl_int error = pl_enqueue_kernel_lambert_conformal_conic(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                          pl_ell, scale, x0, y0, lon0, lat0, rlat1, rlat2);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_project_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
 						   PLSpheroid pl_ell, float scale, float x0, float y0) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "mercator", 1, pl_ell);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_mercator(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                           pl_ell, scale, x0, y0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_unproject_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
 							 PLSpheroid pl_ell, float scale, float x0, float y0) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "mercator", 0, pl_ell);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_mercator(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                           pl_ell, scale, x0, y0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_project_oblique_stereographic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
         PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "oblique_stereographic", 1, pl_ell);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_oblique_stereographic(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
             pl_ell, scale, x0, y0, lon0, lat0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_unproject_oblique_stereographic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
         PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "oblique_stereographic", 0, pl_ell);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_oblique_stereographic(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
             pl_ell, scale, x0, y0, lon0, lat0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_project_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
         float scale, float x0, float y0) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "robinson", 1, PL_SPHEROID_SPHERE);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_robinson(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
             scale, x0, y0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_unproject_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
         float scale, float x0, float y0) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "robinson", 0, PL_SPHEROID_SPHERE);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_robinson(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
             scale, x0, y0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_project_transverse_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out, 
                                       PLSpheroid pl_ell, float scale, float x0, float y0, float lon0) {
+    struct timeval start_time, end_time;
     cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "transverse_mercator", 1, pl_ell);
     if (kernel == NULL)
         return CL_INVALID_KERNEL_NAME;
     
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
     cl_int error = pl_enqueue_kernel_transverse_mercator(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                      pl_ell, scale, x0, y0, lon0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_unproject_transverse_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out, 
                                         PLSpheroid pl_ell, float scale, float x0, float y0, float lon0) {
+    struct timeval start_time, end_time;
     cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "transverse_mercator", 0, pl_ell);
     if (kernel == NULL)
         return CL_INVALID_KERNEL_NAME;
     
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
     cl_int error = pl_enqueue_kernel_transverse_mercator(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                      pl_ell, scale, x0, y0, lon0);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_project_winkel_tripel(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
                                 float scale, float x0, float y0, float lon0, float rlat1) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "winkel_tripel", 1, PL_SPHEROID_SPHERE);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_winkel_tripel(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                    scale, x0, y0, lon0, rlat1);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }
 
 cl_int pl_unproject_winkel_tripel(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
                                   float scale, float x0, float y0, float lon0, float rlat1) {
+    struct timeval start_time, end_time;
 	cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "winkel_tripel", 0, PL_SPHEROID_SPHERE);
 	if (kernel == NULL)
 		return CL_INVALID_KERNEL_NAME;
 	
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
 	cl_int error = pl_enqueue_kernel_winkel_tripel(kernel, pl_ctx, pl_buf->xy_in, pl_buf->xy_out, pl_buf->count,
                                                    scale, x0, y0, lon0, rlat1);
     if (error != CL_SUCCESS)
         return error;
     
-    return pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+    error = pl_read_buffer(pl_ctx->queue, pl_buf->xy_out, xy_out, 2 * pl_buf->count * sizeof(cl_float));
+
+    gettimeofday(&end_time, NULL);
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    return error;
 }

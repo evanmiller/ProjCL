@@ -242,7 +242,8 @@ static test_params_t winkel_tripel_tests[] = {
 };
 
 int compile_module(PLContext *ctx, unsigned int module, char *name);
-int compare_points(const float *points1, const float *points2, const float *ref_points, int count, char *name);
+int compare_points(const float *points1, const float *points2, const float *ref_points,
+        int count, char *name, double speedup);
 int test_albers_equal_area(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 int test_american_polyconic(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 int test_lambert_azimuthal_equal_area(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
@@ -253,399 +254,8 @@ int test_robinson(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_poin
 int test_transverse_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 int test_winkel_tripel(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 
-int compare_proj4_inv(const float *proj_points, const float *orig_points, const char *desc1, const char *desc2) {
-    int failures = 0;
-#ifdef HAVE_PROJ4
-    double points_proj4[2*TEST_POINTS];
-    float orig_points_proj4[2*TEST_POINTS];
-    projPJ pj_out, pj_in;
-    int i;
-    int error;
-
-    for (i=0; i<TEST_POINTS; i++) {
-      points_proj4[2*i] = proj_points[2*i];
-      points_proj4[2*i+1] = proj_points[2*i+1];
-    }
-
-    if ((pj_in = pj_init_plus(desc1)) == NULL) {
-      printf("Failed to init Proj.4 input structure: %s\n", desc1);
-      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
-      exit(1);
-    }
-
-    if ((pj_out = pj_init_plus(desc2)) == NULL) {
-      printf("Failed to init Proj.4 output structure: %s\n", desc2);
-      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
-      exit(1);
-    }
-
-    error = pj_transform(pj_in, pj_out, TEST_POINTS, 2, points_proj4, points_proj4 + 1, NULL);
-    if (error != 0) {
-      printf("Error projecting: %s\n", pj_strerrno(error));
-      exit(1);
-    }
-
-    pj_free(pj_in);
-    pj_free(pj_out);
-
-    for (i=0; i<TEST_POINTS; i++) {
-      orig_points_proj4[2*i] = points_proj4[2*i] * RAD_TO_DEG;
-      orig_points_proj4[2*i+1] = points_proj4[2*i+1] * RAD_TO_DEG;
-    }
-
-    failures = compare_points(orig_points_proj4, orig_points, proj_points,
-            TEST_POINTS, "...inverse same as Proj.4");
-#endif
-    return failures;
-}
-
-int compare_proj4_fwd(const float *orig_points, const float *proj_points, const char *desc1, const char *desc2) {
-    int failures = 0;
-#ifdef HAVE_PROJ4
-    double points_proj4[2*TEST_POINTS];
-    float proj_points_proj4[2*TEST_POINTS];
-    projPJ pj_out, pj_in;
-    int i;
-    int error;
-
-    for (i=0; i<TEST_POINTS; i++) {
-      points_proj4[2*i] = orig_points[2*i] * DEG_TO_RAD;
-      points_proj4[2*i+1] = orig_points[2*i+1] * DEG_TO_RAD;
-    }
-
-    if ((pj_in = pj_init_plus(desc1)) == NULL) {
-      printf("Failed to init Proj.4 input structure: %s\n", desc1);
-      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
-      exit(1);
-    }
-
-    if ((pj_out = pj_init_plus(desc2)) == NULL) {
-      printf("Failed to init Proj.4 output structure: %s\n", desc2);
-      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
-      exit(1);
-    }
-
-    error = pj_transform(pj_in, pj_out, TEST_POINTS, 2, points_proj4, points_proj4 + 1, NULL);
-    if (error != 0) {
-      printf("Error projecting: %s\n", pj_strerrno(error));
-      exit(1);
-    }
-
-    pj_free(pj_in);
-    pj_free(pj_out);
-
-    for (i=0; i<TEST_POINTS; i++) {
-      proj_points_proj4[2*i] = points_proj4[2*i];
-      proj_points_proj4[2*i+1] = points_proj4[2*i+1];
-    }
-
-    failures = compare_points(proj_points_proj4, proj_points, orig_points,
-            TEST_POINTS, "...same as Proj.4");
-#endif
-    return failures;
-}
-
-int sprintf_proj4(char *buf, const char *name, test_params_t params) {
-    char *p = buf;
-    p += sprintf(p, "+proj=%s", name);
-    if (params.ell != -1)
-        p += sprintf(p, " +ellps=%s", params.ell == PL_SPHEROID_SPHERE ? "sphere" : "WGS84");
-    if (strcmp(name, "latlong") != 0) {
-        if (!isnan(params.lat0) && params.lat0 != 0.0)
-            p += sprintf(p, " +lat_0=%.1lf%c", fabs(params.lat0), params.lat0 > 0.0 ? 'n' : 's');
-        if (!isnan(params.lon0) && params.lon0 != 0.0)
-            p += sprintf(p, " +lon_0=%.1lf%c", fabs(params.lon0), params.lon0 > 0.0 ? 'e' : 'w');
-        if (!isnan(params.rlat1))
-            p += sprintf(p, " +lat_1=%.1lf%c", fabs(params.rlat1), params.rlat1 > 0.0 ? 'n' : 's');
-        if (!isnan(params.rlat2))
-            p += sprintf(p, " +lat_2=%.1lf%c", fabs(params.rlat2), params.rlat2 > 0.0 ? 'n' : 's');
-    }
-
-    return 0;
-}
-
-int test_albers_equal_area(PLContext *ctx, 
-        PLProjectionBuffer *orig_buf, float *orig_points) {
-    int error = CL_SUCCESS;
-    int consistency_failures = 0;
-    PLProjectionBuffer *proj_buf = NULL;
-    float proj_points[2*TEST_POINTS];
-    float orig_points2[2*TEST_POINTS];
-    int i;
-    char orig_string[80];
-    char proj_string[80];
-
-    for (i=0; i<sizeof(albers_equal_area_tests)/sizeof(test_params_t); i++) {
-        test_params_t test = albers_equal_area_tests[i];
-        error = pl_project_albers_equal_area(ctx, orig_buf, proj_points, 
-              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
-        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
-        error = pl_unproject_albers_equal_area(ctx, proj_buf, orig_points2, 
-                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
-        pl_unload_projection_data(proj_buf);
-
-        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name);
-        sprintf_proj4(orig_string, "latlong", test);
-        sprintf_proj4(proj_string, "aea", test);
-        consistency_failures += compare_proj4_fwd(orig_points, proj_points, orig_string, proj_string);
-        consistency_failures += compare_proj4_inv(proj_points, orig_points2, proj_string, orig_string);
-    }
-
-    return consistency_failures;
-}
-
-int test_american_polyconic(PLContext *ctx, 
-        PLProjectionBuffer *orig_buf, float *orig_points) {
-    int error = CL_SUCCESS;
-    int consistency_failures = 0;
-    PLProjectionBuffer *proj_buf = NULL;
-    float proj_points[2*TEST_POINTS];
-    float orig_points2[2*TEST_POINTS];
-
-    int i;
-    char orig_string[80];
-    char proj_string[80];
-
-    for (i=0; i<sizeof(american_polyconic_tests)/sizeof(test_params_t); i++) {
-        test_params_t test = american_polyconic_tests[i];
-        error = pl_project_american_polyconic(ctx, orig_buf, proj_points, 
-              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
-        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
-        error = pl_unproject_american_polyconic(ctx, proj_buf, orig_points2, 
-                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
-        pl_unload_projection_data(proj_buf);
-
-        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name);
-        sprintf_proj4(orig_string, "latlong", test);
-        sprintf_proj4(proj_string, "poly", test);
-        consistency_failures += compare_proj4_fwd(orig_points, proj_points, orig_string, proj_string);
-        consistency_failures += compare_proj4_inv(proj_points, orig_points2, proj_string, orig_string);
-    }
-
-    return consistency_failures;
-}
-
-int test_lambert_azimuthal_equal_area(PLContext *ctx, 
-        PLProjectionBuffer *orig_buf, float *orig_points) {
-    int error = CL_SUCCESS;
-    int consistency_failures = 0;
-    PLProjectionBuffer *proj_buf = NULL;
-    float proj_points[2*TEST_POINTS];
-    float orig_points2[2*TEST_POINTS];
-
-    int i;
-    char orig_string[80];
-    char proj_string[80];
-
-    for (i=0; i<sizeof(lambert_azimuthal_equal_area_tests)/sizeof(test_params_t); i++) {
-        test_params_t test = lambert_azimuthal_equal_area_tests[i];
-        error = pl_project_lambert_azimuthal_equal_area(ctx, orig_buf, proj_points, 
-              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
-        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
-        error = pl_unproject_lambert_azimuthal_equal_area(ctx, proj_buf, orig_points2, 
-                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
-        pl_unload_projection_data(proj_buf);
-
-        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name);
-        sprintf_proj4(orig_string, "latlong", test);
-        sprintf_proj4(proj_string, "laea", test);
-        consistency_failures += compare_proj4_fwd(orig_points, proj_points, orig_string, proj_string);
-        consistency_failures += compare_proj4_inv(proj_points, orig_points2, proj_string, orig_string);
-    }
-
-    return consistency_failures;
-}
-
-int test_lambert_conformal_conic(PLContext *ctx, 
-        PLProjectionBuffer *orig_buf, float *orig_points) {
-    int error = CL_SUCCESS;
-    int consistency_failures = 0;
-    PLProjectionBuffer *proj_buf = NULL;
-    float proj_points[2*TEST_POINTS];
-    float orig_points2[2*TEST_POINTS];
-    int i;
-    char orig_string[80];
-    char proj_string[80];
-
-    for (i=0; i<sizeof(lambert_conformal_conic_tests)/sizeof(test_params_t); i++) {
-        test_params_t test = lambert_conformal_conic_tests[i];
-        error = pl_project_lambert_conformal_conic(ctx, orig_buf, proj_points, 
-              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
-        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
-        error = pl_unproject_lambert_conformal_conic(ctx, proj_buf, orig_points2, 
-                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
-        pl_unload_projection_data(proj_buf);
-
-        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name);
-        sprintf_proj4(orig_string, "latlong", test);
-        sprintf_proj4(proj_string, "lcc", test);
-        consistency_failures += compare_proj4_fwd(orig_points, proj_points, orig_string, proj_string);
-        consistency_failures += compare_proj4_inv(proj_points, orig_points2, proj_string, orig_string);
-    }
-
-    return consistency_failures;
-}
-
-int test_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
-    int error = CL_SUCCESS;
-    int consistency_failures = 0;
-    PLProjectionBuffer *proj_buf = NULL;
-    float proj_points[2*TEST_POINTS];
-    float orig_points2[2*TEST_POINTS];
-    int i;
-    char orig_string[80];
-    char proj_string[80];
-
-    for (i=0; i<sizeof(mercator_tests)/sizeof(test_params_t); i++) {
-        test_params_t test = mercator_tests[i];
-        error = pl_project_mercator(ctx, orig_buf, proj_points, 
-              test.ell, 1.0, 0.0, 0.0);
-        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
-        error = pl_unproject_mercator(ctx, proj_buf, orig_points2, 
-                test.ell, 1.0, 0.0, 0.0);
-        pl_unload_projection_data(proj_buf);
-
-        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name);
-        sprintf_proj4(orig_string, "latlong", test);
-        sprintf_proj4(proj_string, "merc", test);
-        consistency_failures += compare_proj4_fwd(orig_points, proj_points, orig_string, proj_string);
-        consistency_failures += compare_proj4_inv(proj_points, orig_points2, proj_string, orig_string);
-    }
-
-    return consistency_failures;
-}
-
-int test_oblique_stereographic(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
-    int error = CL_SUCCESS;
-    int consistency_failures = 0;
-    PLProjectionBuffer *proj_buf = NULL;
-    float proj_points[2*TEST_POINTS];
-    float orig_points2[2*TEST_POINTS];
-    int i;
-    char orig_string[80];
-    char proj_string[80];
-
-    for (i=0; i<sizeof(oblique_stereographic_tests)/sizeof(test_params_t); i++) {
-        test_params_t test = oblique_stereographic_tests[i];
-        error = pl_project_oblique_stereographic(ctx, orig_buf, proj_points, 
-              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
-        if (error != CL_SUCCESS) {
-            printf("Error projecting Oblique Stereographic: %d\n", error);
-        }
-        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
-        error = pl_unproject_oblique_stereographic(ctx, proj_buf, orig_points2, 
-                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
-        if (error != CL_SUCCESS) {
-            printf("Error unprojecting Oblique Stereographic: %d\n", error);
-        }
-        pl_unload_projection_data(proj_buf);
-
-        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name);
-        sprintf_proj4(orig_string, "latlong", test);
-        sprintf_proj4(proj_string, "sterea", test);
-        consistency_failures += compare_proj4_fwd(orig_points, proj_points, orig_string, proj_string);
-        consistency_failures += compare_proj4_inv(proj_points, orig_points2, proj_string, orig_string);
-    }
-
-    return consistency_failures;
-}
-
-int test_robinson(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
-    int error = CL_SUCCESS;
-    int consistency_failures = 0;
-    PLProjectionBuffer *proj_buf = NULL;
-    float proj_points[2*TEST_POINTS];
-    float orig_points2[2*TEST_POINTS];
-    int i;
-    char orig_string[80];
-    char proj_string[80];
-
-    for (i=0; i<sizeof(robinson_tests)/sizeof(test_params_t); i++) {
-        test_params_t test = robinson_tests[i];
-        error = pl_project_robinson(ctx, orig_buf, proj_points, 1.0, 0.0, 0.0);
-        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
-        error = pl_unproject_robinson(ctx, proj_buf, orig_points2, 1.0, 0.0, 0.0);
-        pl_unload_projection_data(proj_buf);
-
-        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name);
-        sprintf_proj4(orig_string, "latlong", test);
-        sprintf_proj4(proj_string, "robin", test);
-        consistency_failures += compare_proj4_fwd(orig_points, proj_points, orig_string, proj_string);
-        consistency_failures += compare_proj4_inv(proj_points, orig_points2, proj_string, orig_string);
-    }
-
-    return consistency_failures;
-}
-
-int test_transverse_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
-    int error = CL_SUCCESS;
-    int consistency_failures = 0;
-    PLProjectionBuffer *proj_buf = NULL;
-    float proj_points[2*TEST_POINTS];
-    float orig_points2[2*TEST_POINTS];
-    int i;
-    char orig_string[80];
-    char proj_string[80];
-
-    for (i=0; i<sizeof(transverse_mercator_tests)/sizeof(test_params_t); i++) {
-        test_params_t test = transverse_mercator_tests[i];
-        error = pl_project_transverse_mercator(ctx, orig_buf, proj_points, 
-              test.ell, 1.0, 0.0, 0.0, test.lon0);
-        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
-        error = pl_unproject_transverse_mercator(ctx, proj_buf, orig_points2, 
-                test.ell, 1.0, 0.0, 0.0, test.lon0);
-        pl_unload_projection_data(proj_buf);
-
-        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name);
-        sprintf_proj4(orig_string, "latlong", test);
-        sprintf_proj4(proj_string, test.ell == PL_SPHEROID_SPHERE ? "tmerc" : "etmerc", test);
-        consistency_failures += compare_proj4_fwd(orig_points, proj_points, orig_string, proj_string);
-        consistency_failures += compare_proj4_inv(proj_points, orig_points2, proj_string, orig_string);
-    }
-
-    return consistency_failures;
-}
-
-int test_winkel_tripel(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
-    int error = CL_SUCCESS;
-    int consistency_failures = 0;
-    PLProjectionBuffer *proj_buf = NULL;
-    float proj_points[2*TEST_POINTS];
-    float orig_points2[2*TEST_POINTS];
-
-    int i;
-    char orig_string[80];
-    char proj_string[80];
-
-    for (i=0; i<sizeof(winkel_tripel_tests)/sizeof(test_params_t); i++) {
-        test_params_t test = winkel_tripel_tests[i];
-        error = pl_project_winkel_tripel(ctx, orig_buf, proj_points, 
-              1.0, 0.0, 0.0, test.lon0, acos(M_2_PI) * RAD_TO_DEG);
-        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
-        error = pl_unproject_winkel_tripel(ctx, proj_buf, orig_points2, 
-                1.0, 0.0, 0.0, test.lon0, acos(M_2_PI) * RAD_TO_DEG);
-        pl_unload_projection_data(proj_buf);
-
-        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name);
-        sprintf_proj4(orig_string, "latlong", test);
-        sprintf_proj4(proj_string, "wintri", test);
-        consistency_failures += compare_proj4_fwd(orig_points, proj_points, orig_string, proj_string);
-        consistency_failures += compare_proj4_inv(proj_points, orig_points2, proj_string, orig_string);
-    }
-
-    return consistency_failures;
-}
-
-int compare_points(const float *points1, const float *points2, const float *ref_points, int count, char *name) {
+int compare_points(const float *points1, const float *points2, const float *ref_points,
+        int count, char *name, double speedup) {
     int i;
     int failures = 0;
     printf("-- %s... ", name);
@@ -681,7 +291,11 @@ int compare_points(const float *points1, const float *points2, const float *ref_
                ref_points[2*max_delta_y_i], ref_points[2*max_delta_y_i+1], points2[2*max_delta_y_i], points2[2*max_delta_y_i+1],
                max_delta_y, max_delta_y_i);
     } else {
-        printf("ok\n");
+        if (isnan(speedup)) {
+            printf("ok\n");
+        } else {
+            printf("ok (%.1lfX faster)\n", speedup);
+        }
     }
 
     return failures;
@@ -797,4 +411,503 @@ int main(int argc, char **argv) {
     pl_context_free(ctx);
 
     return consistency_failures > 0;
+}
+int compare_proj4_inv(const float *proj_points, const float *orig_points,
+        const char *desc1, const char *desc2, double projcl_secs) {
+    int failures = 0;
+#ifdef HAVE_PROJ4
+    double points_proj4[2*TEST_POINTS];
+    float orig_points_proj4[2*TEST_POINTS];
+    projPJ pj_out, pj_in;
+    int i;
+    int error;
+    struct timeval start_time, end_time;
+    double proj4_secs;
+
+    for (i=0; i<TEST_POINTS; i++) {
+      points_proj4[2*i] = proj_points[2*i];
+      points_proj4[2*i+1] = proj_points[2*i+1];
+    }
+
+    if ((pj_in = pj_init_plus(desc1)) == NULL) {
+      printf("Failed to init Proj.4 input structure: %s\n", desc1);
+      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
+      exit(1);
+    }
+
+    if ((pj_out = pj_init_plus(desc2)) == NULL) {
+      printf("Failed to init Proj.4 output structure: %s\n", desc2);
+      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
+      exit(1);
+    }
+
+    gettimeofday(&start_time, NULL);
+    error = pj_transform(pj_in, pj_out, TEST_POINTS, 2, points_proj4, points_proj4 + 1, NULL);
+    gettimeofday(&end_time, NULL);
+
+    proj4_secs = (end_time.tv_sec + end_time.tv_usec * 1e-6) 
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    if (error != 0) {
+      printf("Error projecting: %s\n", pj_strerrno(error));
+      exit(1);
+    }
+
+    pj_free(pj_in);
+    pj_free(pj_out);
+
+    for (i=0; i<TEST_POINTS; i++) {
+      orig_points_proj4[2*i] = points_proj4[2*i] * RAD_TO_DEG;
+      orig_points_proj4[2*i+1] = points_proj4[2*i+1] * RAD_TO_DEG;
+    }
+
+    failures = compare_points(orig_points_proj4, orig_points, proj_points,
+            TEST_POINTS, "...inverse same as Proj.4", proj4_secs / projcl_secs);
+#endif
+    return failures;
+}
+
+int compare_proj4_fwd(const float *orig_points, const float *proj_points,
+        const char *desc1, const char *desc2, double projcl_secs) {
+    int failures = 0;
+#ifdef HAVE_PROJ4
+    double points_proj4[2*TEST_POINTS];
+    float proj_points_proj4[2*TEST_POINTS];
+    projPJ pj_out, pj_in;
+    int i;
+    int error;
+    struct timeval start_time, end_time;
+    double proj4_secs;
+
+    for (i=0; i<TEST_POINTS; i++) {
+      points_proj4[2*i] = orig_points[2*i] * DEG_TO_RAD;
+      points_proj4[2*i+1] = orig_points[2*i+1] * DEG_TO_RAD;
+    }
+
+    if ((pj_in = pj_init_plus(desc1)) == NULL) {
+      printf("Failed to init Proj.4 input structure: %s\n", desc1);
+      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
+      exit(1);
+    }
+
+    if ((pj_out = pj_init_plus(desc2)) == NULL) {
+      printf("Failed to init Proj.4 output structure: %s\n", desc2);
+      printf("Error code %d: %s\n", pj_errno, pj_strerrno(pj_errno));
+      exit(1);
+    }
+
+    gettimeofday(&start_time, NULL);
+    error = pj_transform(pj_in, pj_out, TEST_POINTS, 2, points_proj4, points_proj4 + 1, NULL);
+    gettimeofday(&end_time, NULL);
+
+    proj4_secs = (end_time.tv_sec + end_time.tv_usec * 1e-6) 
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
+
+    if (error != 0) {
+      printf("Error projecting: %s\n", pj_strerrno(error));
+      exit(1);
+    }
+
+    pj_free(pj_in);
+    pj_free(pj_out);
+
+    for (i=0; i<TEST_POINTS; i++) {
+      proj_points_proj4[2*i] = points_proj4[2*i];
+      proj_points_proj4[2*i+1] = points_proj4[2*i+1];
+    }
+
+    failures = compare_points(proj_points_proj4, proj_points, orig_points,
+            TEST_POINTS, "...forward same as Proj.4", proj4_secs / projcl_secs);
+#endif
+    return failures;
+}
+
+int sprintf_proj4(char *buf, const char *name, test_params_t params) {
+    char *p = buf;
+    p += sprintf(p, "+proj=%s", name);
+    if (params.ell != -1)
+        p += sprintf(p, " +ellps=%s", params.ell == PL_SPHEROID_SPHERE ? "sphere" : "WGS84");
+    if (strcmp(name, "latlong") != 0) {
+        if (!isnan(params.lat0) && params.lat0 != 0.0)
+            p += sprintf(p, " +lat_0=%.1lf%c", fabs(params.lat0), params.lat0 > 0.0 ? 'n' : 's');
+        if (!isnan(params.lon0) && params.lon0 != 0.0)
+            p += sprintf(p, " +lon_0=%.1lf%c", fabs(params.lon0), params.lon0 > 0.0 ? 'e' : 'w');
+        if (!isnan(params.rlat1))
+            p += sprintf(p, " +lat_1=%.1lf%c", fabs(params.rlat1), params.rlat1 > 0.0 ? 'n' : 's');
+        if (!isnan(params.rlat2))
+            p += sprintf(p, " +lat_2=%.1lf%c", fabs(params.rlat2), params.rlat2 > 0.0 ? 'n' : 's');
+    }
+
+    return 0;
+}
+
+int test_albers_equal_area(PLContext *ctx, 
+        PLProjectionBuffer *orig_buf, float *orig_points) {
+    int error = CL_SUCCESS;
+    int consistency_failures = 0;
+    PLProjectionBuffer *proj_buf = NULL;
+    float proj_points[2*TEST_POINTS];
+    float orig_points2[2*TEST_POINTS];
+    int i;
+    char orig_string[80];
+    char proj_string[80];
+    double fwd_secs, inv_secs;
+
+    for (i=0; i<sizeof(albers_equal_area_tests)/sizeof(test_params_t); i++) {
+        test_params_t test = albers_equal_area_tests[i];
+
+        error = pl_project_albers_equal_area(ctx, orig_buf, proj_points, 
+              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
+        fwd_secs = ctx->last_time;
+
+        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
+
+        error = pl_unproject_albers_equal_area(ctx, proj_buf, orig_points2, 
+                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
+        inv_secs = ctx->last_time;
+
+        pl_unload_projection_data(proj_buf);
+
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
+                TEST_POINTS, test.name, NAN);
+
+        sprintf_proj4(orig_string, "latlong", test);
+        sprintf_proj4(proj_string, "aea", test);
+
+        consistency_failures += compare_proj4_fwd(orig_points, proj_points,
+                orig_string, proj_string, fwd_secs);
+        consistency_failures += compare_proj4_inv(proj_points, orig_points2,
+                proj_string, orig_string, inv_secs);
+    }
+
+    return consistency_failures;
+}
+
+int test_american_polyconic(PLContext *ctx, 
+        PLProjectionBuffer *orig_buf, float *orig_points) {
+    int error = CL_SUCCESS;
+    int consistency_failures = 0;
+    PLProjectionBuffer *proj_buf = NULL;
+    float proj_points[2*TEST_POINTS];
+    float orig_points2[2*TEST_POINTS];
+
+    int i;
+    char orig_string[80];
+    char proj_string[80];
+    double fwd_secs, inv_secs;
+
+    for (i=0; i<sizeof(american_polyconic_tests)/sizeof(test_params_t); i++) {
+        test_params_t test = american_polyconic_tests[i];
+
+        error = pl_project_american_polyconic(ctx, orig_buf, proj_points, 
+              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
+        fwd_secs = ctx->last_time;
+
+        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
+
+        error = pl_unproject_american_polyconic(ctx, proj_buf, orig_points2, 
+                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
+        inv_secs = ctx->last_time;
+
+        pl_unload_projection_data(proj_buf);
+
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
+                TEST_POINTS, test.name, NAN);
+
+        sprintf_proj4(orig_string, "latlong", test);
+        sprintf_proj4(proj_string, "poly", test);
+
+        consistency_failures += compare_proj4_fwd(orig_points, proj_points,
+                orig_string, proj_string, fwd_secs);
+        consistency_failures += compare_proj4_inv(proj_points, orig_points2,
+                proj_string, orig_string, inv_secs);
+    }
+
+    return consistency_failures;
+}
+
+int test_lambert_azimuthal_equal_area(PLContext *ctx, 
+        PLProjectionBuffer *orig_buf, float *orig_points) {
+    int error = CL_SUCCESS;
+    int consistency_failures = 0;
+    PLProjectionBuffer *proj_buf = NULL;
+    float proj_points[2*TEST_POINTS];
+    float orig_points2[2*TEST_POINTS];
+
+    int i;
+    char orig_string[80];
+    char proj_string[80];
+    double fwd_secs, inv_secs;
+
+    for (i=0; i<sizeof(lambert_azimuthal_equal_area_tests)/sizeof(test_params_t); i++) {
+        test_params_t test = lambert_azimuthal_equal_area_tests[i];
+
+        error = pl_project_lambert_azimuthal_equal_area(ctx, orig_buf, proj_points, 
+              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
+        fwd_secs = ctx->last_time;
+
+        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
+
+        error = pl_unproject_lambert_azimuthal_equal_area(ctx, proj_buf, orig_points2, 
+                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
+        inv_secs = ctx->last_time;
+
+        pl_unload_projection_data(proj_buf);
+
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
+                TEST_POINTS, test.name, NAN);
+
+        sprintf_proj4(orig_string, "latlong", test);
+        sprintf_proj4(proj_string, "laea", test);
+
+        consistency_failures += compare_proj4_fwd(orig_points, proj_points,
+                orig_string, proj_string, fwd_secs);
+        consistency_failures += compare_proj4_inv(proj_points, orig_points2,
+                proj_string, orig_string, inv_secs);
+    }
+
+    return consistency_failures;
+}
+
+int test_lambert_conformal_conic(PLContext *ctx, 
+        PLProjectionBuffer *orig_buf, float *orig_points) {
+    int error = CL_SUCCESS;
+    int consistency_failures = 0;
+    PLProjectionBuffer *proj_buf = NULL;
+    float proj_points[2*TEST_POINTS];
+    float orig_points2[2*TEST_POINTS];
+    int i;
+    char orig_string[80];
+    char proj_string[80];
+    double fwd_secs, inv_secs;
+
+    for (i=0; i<sizeof(lambert_conformal_conic_tests)/sizeof(test_params_t); i++) {
+        test_params_t test = lambert_conformal_conic_tests[i];
+
+        error = pl_project_lambert_conformal_conic(ctx, orig_buf, proj_points, 
+              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
+        fwd_secs = ctx->last_time;
+
+        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
+
+        error = pl_unproject_lambert_conformal_conic(ctx, proj_buf, orig_points2, 
+                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
+        inv_secs = ctx->last_time;
+
+        pl_unload_projection_data(proj_buf);
+
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
+                TEST_POINTS, test.name, NAN);
+
+        sprintf_proj4(orig_string, "latlong", test);
+        sprintf_proj4(proj_string, "lcc", test);
+
+        consistency_failures += compare_proj4_fwd(orig_points, proj_points,
+                orig_string, proj_string, fwd_secs);
+        consistency_failures += compare_proj4_inv(proj_points, orig_points2,
+                proj_string, orig_string, inv_secs);
+    }
+
+    return consistency_failures;
+}
+
+int test_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
+    int error = CL_SUCCESS;
+    int consistency_failures = 0;
+    PLProjectionBuffer *proj_buf = NULL;
+    float proj_points[2*TEST_POINTS];
+    float orig_points2[2*TEST_POINTS];
+    int i;
+    char orig_string[80];
+    char proj_string[80];
+    double fwd_secs, inv_secs;
+
+    for (i=0; i<sizeof(mercator_tests)/sizeof(test_params_t); i++) {
+        test_params_t test = mercator_tests[i];
+
+        error = pl_project_mercator(ctx, orig_buf, proj_points, test.ell, 1.0, 0.0, 0.0);
+        fwd_secs = ctx->last_time;
+
+        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
+
+        error = pl_unproject_mercator(ctx, proj_buf, orig_points2, test.ell, 1.0, 0.0, 0.0);
+        inv_secs = ctx->last_time;
+
+        pl_unload_projection_data(proj_buf);
+
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
+                TEST_POINTS, test.name, NAN);
+
+        sprintf_proj4(orig_string, "latlong", test);
+        sprintf_proj4(proj_string, "merc", test);
+
+        consistency_failures += compare_proj4_fwd(orig_points, proj_points,
+                orig_string, proj_string, fwd_secs);
+        consistency_failures += compare_proj4_inv(proj_points, orig_points2,
+                proj_string, orig_string, inv_secs);
+    }
+
+    return consistency_failures;
+}
+
+int test_oblique_stereographic(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
+    int error = CL_SUCCESS;
+    int consistency_failures = 0;
+    PLProjectionBuffer *proj_buf = NULL;
+    float proj_points[2*TEST_POINTS];
+    float orig_points2[2*TEST_POINTS];
+    int i;
+    char orig_string[80];
+    char proj_string[80];
+    double fwd_secs, inv_secs;
+
+    for (i=0; i<sizeof(oblique_stereographic_tests)/sizeof(test_params_t); i++) {
+        test_params_t test = oblique_stereographic_tests[i];
+
+        error = pl_project_oblique_stereographic(ctx, orig_buf, proj_points, 
+              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
+        fwd_secs = ctx->last_time;
+
+        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
+
+        error = pl_unproject_oblique_stereographic(ctx, proj_buf, orig_points2, 
+                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0);
+        inv_secs = ctx->last_time;
+
+        pl_unload_projection_data(proj_buf);
+
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
+                TEST_POINTS, test.name, NAN);
+
+        sprintf_proj4(orig_string, "latlong", test);
+        sprintf_proj4(proj_string, "sterea", test);
+
+        consistency_failures += compare_proj4_fwd(orig_points, proj_points,
+                orig_string, proj_string, fwd_secs);
+        consistency_failures += compare_proj4_inv(proj_points, orig_points2,
+                proj_string, orig_string, inv_secs);
+    }
+
+    return consistency_failures;
+}
+
+int test_robinson(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
+    int error = CL_SUCCESS;
+    int consistency_failures = 0;
+    PLProjectionBuffer *proj_buf = NULL;
+    float proj_points[2*TEST_POINTS];
+    float orig_points2[2*TEST_POINTS];
+    int i;
+    char orig_string[80];
+    char proj_string[80];
+    double fwd_secs, inv_secs;
+
+    for (i=0; i<sizeof(robinson_tests)/sizeof(test_params_t); i++) {
+        test_params_t test = robinson_tests[i];
+
+        error = pl_project_robinson(ctx, orig_buf, proj_points, 1.0, 0.0, 0.0);
+        fwd_secs = ctx->last_time;
+
+        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
+
+        error = pl_unproject_robinson(ctx, proj_buf, orig_points2, 1.0, 0.0, 0.0);
+        inv_secs = ctx->last_time;
+
+        pl_unload_projection_data(proj_buf);
+
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
+                TEST_POINTS, test.name, NAN);
+
+        sprintf_proj4(orig_string, "latlong", test);
+        sprintf_proj4(proj_string, "robin", test);
+        consistency_failures += compare_proj4_fwd(orig_points, proj_points,
+                orig_string, proj_string, fwd_secs);
+        consistency_failures += compare_proj4_inv(proj_points, orig_points2,
+                proj_string, orig_string, inv_secs);
+    }
+
+    return consistency_failures;
+}
+
+int test_transverse_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
+    int error = CL_SUCCESS;
+    int consistency_failures = 0;
+    PLProjectionBuffer *proj_buf = NULL;
+    float proj_points[2*TEST_POINTS];
+    float orig_points2[2*TEST_POINTS];
+    int i;
+    char orig_string[80];
+    char proj_string[80];
+    double fwd_secs, inv_secs;
+
+    for (i=0; i<sizeof(transverse_mercator_tests)/sizeof(test_params_t); i++) {
+        test_params_t test = transverse_mercator_tests[i];
+
+        error = pl_project_transverse_mercator(ctx, orig_buf, proj_points, 
+              test.ell, 1.0, 0.0, 0.0, test.lon0);
+        fwd_secs = ctx->last_time;
+
+        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
+
+        error = pl_unproject_transverse_mercator(ctx, proj_buf, orig_points2, 
+                test.ell, 1.0, 0.0, 0.0, test.lon0);
+        inv_secs = ctx->last_time;
+
+        pl_unload_projection_data(proj_buf);
+
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
+                TEST_POINTS, test.name, NAN);
+
+        sprintf_proj4(orig_string, "latlong", test);
+        sprintf_proj4(proj_string, test.ell == PL_SPHEROID_SPHERE ? "tmerc" : "etmerc", test);
+
+        consistency_failures += compare_proj4_fwd(orig_points, proj_points,
+                orig_string, proj_string, fwd_secs);
+        consistency_failures += compare_proj4_inv(proj_points, orig_points2,
+                proj_string, orig_string, inv_secs);
+    }
+
+    return consistency_failures;
+}
+
+int test_winkel_tripel(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
+    int error = CL_SUCCESS;
+    int consistency_failures = 0;
+    PLProjectionBuffer *proj_buf = NULL;
+    float proj_points[2*TEST_POINTS];
+    float orig_points2[2*TEST_POINTS];
+    double fwd_secs, inv_secs;
+
+    int i;
+    char orig_string[80];
+    char proj_string[80];
+
+    for (i=0; i<sizeof(winkel_tripel_tests)/sizeof(test_params_t); i++) {
+        test_params_t test = winkel_tripel_tests[i];
+
+        error = pl_project_winkel_tripel(ctx, orig_buf, proj_points, 
+              1.0, 0.0, 0.0, test.lon0, acos(M_2_PI) * RAD_TO_DEG);
+        fwd_secs = ctx->last_time;
+
+        proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
+
+        error = pl_unproject_winkel_tripel(ctx, proj_buf, orig_points2, 
+                1.0, 0.0, 0.0, test.lon0, acos(M_2_PI) * RAD_TO_DEG);
+        inv_secs = ctx->last_time;
+
+        pl_unload_projection_data(proj_buf);
+
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
+                TEST_POINTS, test.name, NAN);
+
+        sprintf_proj4(orig_string, "latlong", test);
+        sprintf_proj4(proj_string, "wintri", test);
+
+        consistency_failures += compare_proj4_fwd(orig_points, proj_points,
+                orig_string, proj_string, fwd_secs);
+        consistency_failures += compare_proj4_inv(proj_points, orig_points2,
+                proj_string, orig_string, inv_secs);
+    }
+
+    return consistency_failures;
 }

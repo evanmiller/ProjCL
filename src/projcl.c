@@ -19,6 +19,8 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/time.h>
+#include <math.h>
 
 #define PL_DEBUG 0
 
@@ -140,7 +142,11 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
 	size_t buf_used = 0;
 	int entry_index = 0;
     int kernel_count = 0;
+    struct timeval start_time, end_time;
     
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
+
     if (modules == 0)
         modules = ~0;
     
@@ -292,6 +298,11 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
     
     if (outError)
         *outError = CL_SUCCESS;
+
+    gettimeofday(&end_time, NULL);
+
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
 	
 	return pl_code;
 }
@@ -299,8 +310,12 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
 cl_int pl_load_code(PLContext *pl_ctx, PLCode *pl_code) {
 	cl_program program;
 	cl_int error;
-	
 	cl_int binary_status;
+
+    struct timeval start_time, end_time;
+    
+    pl_ctx->last_time = NAN;
+    gettimeofday(&start_time, NULL);
 	
 	program = clCreateProgramWithBinary(pl_ctx->ctx, 1, 
 										(const cl_device_id *)&pl_ctx->device_id, 
@@ -337,6 +352,11 @@ cl_int pl_load_code(PLContext *pl_ctx, PLCode *pl_code) {
 	
 	pl_ctx->kernel_count = kernel_count_ret;
 	pl_ctx->kernels = kernels;
+
+    gettimeofday(&end_time, NULL);
+
+    pl_ctx->last_time = (end_time.tv_sec + end_time.tv_usec * 1e-6)
+        - (start_time.tv_sec + start_time.tv_usec * 1e-6);
 	
 	return CL_SUCCESS;
 }

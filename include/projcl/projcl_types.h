@@ -101,6 +101,7 @@ typedef struct PLContext_s {
 	cl_device_id     device_id;
 	cl_uint		     kernel_count;
 	cl_kernel	    *kernels;
+    double           last_time;
 } PLContext;
 
 typedef struct PLProjectionBuffer_s {
