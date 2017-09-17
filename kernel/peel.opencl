@@ -87,10 +87,10 @@ float8 pl_phi2(float8 log_ts, float e) {
 	int i;
 	
 	eccnth = .5f * e;
-	Phi = M_PI_2F - 2.f * atan(exp(log_ts));
+	Phi = -asin(tanh(log_ts));
 	for (i = I_ITER; i; --i) {
 		con = e * sin(Phi);
-		dphi = M_PI_2F - 2.f * atan(exp(log_ts + eccnth * (log1p(-con)-log1p(con)))) - Phi;
+		dphi = -asin(tanh(log_ts + eccnth * (log1p(-con)-log1p(con)))) - Phi;
 		Phi += dphi;
 		if (all(fabs(dphi) <= ITOL))
 			break;

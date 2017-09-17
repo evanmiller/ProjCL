@@ -51,7 +51,7 @@ __kernel void pl_unproject_american_polyconic_s(
     float8 f1, f2, df1phi, df2phi, df1lam, df2lam;
     float8 c, invDet;
 
-    int iter = 4;
+    int iter = AMERICAN_POLYCONIC_N_ITER;
 
     phi = y + phi0;
     sinPhi = sincos(phi, &cosPhi);
