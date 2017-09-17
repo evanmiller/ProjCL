@@ -32,7 +32,7 @@ __kernel void pl_project_winkel_tripel_s(
     d = acos(cosPhi * cosLambda2);
     sinD = sin(d);
 
-    x = lambda2 * cosphi1 + select(d * cosPhi * sinLambda2 / sinD, 0.f, d == 0.f);
+    x = lambda2 * cosphi1 + select(d * cosPhi * sinLambda2 / sinD, lambda2, phi == 0.f);
     y =    0.5f * phi     + select(.5f * d * sinPhi / sinD,        0.f, d == 0.f);
 
     xy_out[i].even = x0 + scale * x;
