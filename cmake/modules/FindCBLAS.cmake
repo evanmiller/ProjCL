@@ -143,6 +143,19 @@ ENDMACRO(CHECK_ALL_LIBRARIES)
 SET(CBLAS_LINKER_FLAGS)
 SET(CBLAS_LIBRARIES)
 
+# CBLAS in Netlib / OpenBLAS?
+IF(NOT CBLAS_LIBRARIES)
+  CHECK_ALL_LIBRARIES(
+    CBLAS_LIBRARIES
+    CBLAS
+    cblas_dgemm
+    ""
+    "blas"
+    "cblas.h"
+    TRUE
+    )
+ENDIF(NOT CBLAS_LIBRARIES)
+
 # CBLAS in intel mkl library? (shared)
 IF(NOT CBLAS_LIBRARIES)
   CHECK_ALL_LIBRARIES(
@@ -190,19 +203,6 @@ IF(NOT CBLAS_LIBRARIES)
     cblas_dgemm
     ""
     "cblas;f77blas;atlas"
-    "cblas.h"
-    TRUE
-    )
-ENDIF(NOT CBLAS_LIBRARIES)
-
-IF(NOT CBLAS_LIBRARIES)
-  # CBLAS in Netlib / OpenBLAS?
-  CHECK_ALL_LIBRARIES(
-    CBLAS_LIBRARIES
-    CBLAS
-    cblas_dgemm
-    ""
-    "blas"
     "cblas.h"
     TRUE
     )
