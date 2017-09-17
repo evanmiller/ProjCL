@@ -21,7 +21,7 @@ __kernel void pl_project_winkel_tripel_s(
     float8 lambda = radians(xy_in[i].even) - lambda0;
     float8 phi    = radians(xy_in[i].odd);
     
-    float8 x, y, lambda2, c, d;
+    float8 x, y, lambda2, sinD, d;
     
     float8 cosPhi, sinPhi, cosLambda2, sinLambda2;
     
@@ -29,11 +29,11 @@ __kernel void pl_project_winkel_tripel_s(
     sinPhi = sincos(phi, &cosPhi);
     sinLambda2 = sincos(lambda2, &cosLambda2);
     
-    c = sqrt(1.f - cosPhi * cosPhi * cosLambda2 * cosLambda2);
     d = acos(cosPhi * cosLambda2);
+    sinD = sin(d);
 
-    x = lambda2 * cosphi1 + select(d * cosPhi * sinLambda2 / c, 0.f, c == 0.f);
-    y =    0.5f * phi     + select(.5f * d * sinPhi / c,        0.f, c == 0.f);
+    x = lambda2 * cosphi1 + select(d * cosPhi * sinLambda2 / sinD, 0.f, d == 0.f);
+    y =    0.5f * phi     + select(.5f * d * sinPhi / sinD,        0.f, d == 0.f);
 
     xy_out[i].even = x0 + scale * x;
     xy_out[i].odd = y0 + scale * y;
@@ -76,9 +76,9 @@ __kernel void pl_unproject_winkel_tripel_s(
         sinLambda = 2.f * sinLambda2 * cosLambda2;
 
         d = acos(cosPhi*cosLambda2);
-        c = 1.f - cosPhi * cosPhi * cosLambda2 * cosLambda2;
-        invC = 1.f / c;
-        invC12 = 1.f / sqrt(c);
+        c = sin(d);
+        invC = 1.f / c / c;
+        invC12 = 1.f / c;
         dInvC32 = d * invC * invC12;
         f1 = d * cosPhi * sinLambda2 * invC12 + .5f * lambda * cosphi1 - x;
         f2 = .5f * d * sinPhi * invC12 + .5f * phi - y;
