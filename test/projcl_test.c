@@ -365,7 +365,7 @@ int main(int argc, char **argv) {
     PLProjectionBuffer *orig_buf = NULL;
 
     for (i=0; i<TEST_POINTS/4; i++) { /* grid */
-        orig_points[offset++] = -120.0 + 240.0 * (i%100) / (TEST_POINTS/100/4-1);
+        orig_points[offset++] = -160.0 + 320.0 * (i%100) / (TEST_POINTS/100/4-1);
         orig_points[offset++] = -85.0 + 170.0 * (i/100) / (TEST_POINTS/100/4-1);
     }
     for (i=0; i<TEST_POINTS/4; i++) { /* circle */
@@ -377,7 +377,7 @@ int main(int argc, char **argv) {
         orig_points[offset++] = -85.0 + 170.0 * i/(TEST_POINTS/4-1);
     }
     for (i=0; i<TEST_POINTS/4; i++) { /* central latitude */
-        orig_points[offset++] = -120.0 + 240.0 * i/(TEST_POINTS/4-1);
+        orig_points[offset++] = -160.0 + 320.0 * i/(TEST_POINTS/4-1);
         orig_points[offset++] = 0.0;
     }
 
