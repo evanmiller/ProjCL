@@ -38,7 +38,6 @@
 float8 pl_mlfn(float8 phi, float8 sphi, float8 cphi, float8 en);
 float8 pl_inv_mlfn(float8 argphi, float es, float8 en);
 float8 pl_msfn(float8 sinphi, float8 cosphi, float es);
-float8 pl_tsfn(float8 phi, float8 sinphi, float e);
 float8 pl_qsfn(float8 sinphi, float e, float one_es);
 float8 pl_phi2(float8 log_ts, float e);
 float8 pl_mod_pi(float8 phi);
@@ -72,14 +71,9 @@ float8 pl_msfn(float8 sinphi, float8 cosphi, float es) {
 	return (cosphi / sqrt(1.f - es * sinphi * sinphi));
 }
 
-float8 pl_tsfn(float8 phi, float8 sinphi, float e) {
-	float8 con = e * sinphi;
-	return (tan(M_PI_4F - 0.5f * phi) / powr((1.f - con) / (1.f + con), .5f * e));
-}
-
 float8 pl_qsfn(float8 sinphi, float e, float one_es) {
 	float8 con = e * sinphi;
-	return (one_es * (sinphi / (1.f - con * con) - (.5f / e) * (log1p(-con) - log1p(con))));
+	return one_es * (sinphi / (1.f - con * con) - (.5f / e) * (log1p(-con) - log1p(con)));
 }
 
 float8 pl_phi2(float8 log_ts, float e) {
