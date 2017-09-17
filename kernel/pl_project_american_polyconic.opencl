@@ -42,26 +42,47 @@ __kernel void pl_unproject_american_polyconic_s(
 	int i = get_global_id(0);
 	
 	float8 x = (xy_in[i].even - x0) / scale;
-	float8 y = (xy_in[i].odd - y0) / scale + phi0;
+	float8 y = (xy_in[i].odd - y0) / scale;
 	
 	float8 lambda, phi;
-	
-    float8 r = y * y + x * x;
-	
-	float8 dPhi, tanphi;
-    int iter = AMERICAN_POLYCONIC_N_ITER;
-	
-	phi = y;
 
-    do {
-		tanphi = tan(phi);
-		dPhi = (y * (phi * tanphi + 1.f) - phi - 0.5f * (phi * phi + r) * tanphi) /
-			((phi - y) / tanphi - 1.f);
-		phi -= dPhi;
+    float8 dPhi, dLam, cosPhi, sinPhi;
+    float8 sinLSinPhi, cosLSinPhi, cosLSinPhi1;
+    float8 f1, f2, df1phi, df2phi, df1lam, df2lam;
+    float8 c, invDet;
+
+    int iter = 4;
+
+    phi = y + phi0;
+    sinPhi = sincos(phi, &cosPhi);
+    lambda = asin(x * sinPhi / cosPhi) / sinPhi;
+    sinLSinPhi = sincos(lambda * sinPhi, &cosLSinPhi);
+    cosLSinPhi1 = sinLSinPhi * tan(0.5f * lambda * sinPhi); // half-angle formula
+	
+    do { /* Newton-Raphson w/ full Jacobian matrix */
+        c = lambda * cosPhi * cosPhi / sinPhi;
+
+        f1 = cosPhi * sinLSinPhi / sinPhi - x;
+        f2 = phi - phi0 + cosPhi * cosLSinPhi1 / sinPhi - y;
+
+        df1phi = c * cosLSinPhi - sinLSinPhi / sinPhi / sinPhi;
+        df2phi = 1.f + c * sinLSinPhi - cosLSinPhi1 / sinPhi / sinPhi;
+        df1lam = cosPhi * cosLSinPhi;
+        df2lam = cosPhi * sinLSinPhi;
+
+        invDet = 1.f / (df1phi * df2lam - df2phi * df1lam);
+
+        dPhi = (f1 * df2lam - f2 * df1lam) * invDet;
+        dLam = (f2 * df1phi - f1 * df2phi) * invDet;
+
+        phi -= dPhi;
+        lambda -= dLam;
+
+        sinPhi = sincos(phi, &cosPhi);
+        sinLSinPhi = sincos(lambda * sinPhi, &cosLSinPhi);
+        cosLSinPhi1 = sinLSinPhi * tan(0.5f * lambda * sinPhi);
 	} while (--iter);
 
-	lambda = asin(x * tan(phi)) / sin(phi);
-	
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
 	xy_out[i].odd = degrees(phi);
 }
