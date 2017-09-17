@@ -40,7 +40,7 @@ float8 pl_inv_mlfn(float8 argphi, float es, float8 en);
 float8 pl_msfn(float8 sinphi, float8 cosphi, float es);
 float8 pl_tsfn(float8 phi, float8 sinphi, float e);
 float8 pl_qsfn(float8 sinphi, float e, float one_es);
-float8 pl_phi2(float8 ts_num, float ts_den, float e);
+float8 pl_phi2(float8 log_ts, float e);
 float8 pl_mod_pi(float8 phi);
 float4 pl_interpolate_cubic4(float X, float4 A, float4 B, float4 C, float4 D);
 
@@ -79,19 +79,18 @@ float8 pl_tsfn(float8 phi, float8 sinphi, float e) {
 
 float8 pl_qsfn(float8 sinphi, float e, float one_es) {
 	float8 con = e * sinphi;
-	return (one_es * (sinphi / (1.f - con * con) - (.5f / e) * log((1.f - con) / (1.f + con))));
+	return (one_es * (sinphi / (1.f - con * con) - (.5f / e) * (log1p(-con) - log1p(con))));
 }
 
-float8 pl_phi2(float8 ts_num, float ts_den, float e) {
+float8 pl_phi2(float8 log_ts, float e) {
 	float8 eccnth, Phi, con, dphi;
 	int i;
 	
 	eccnth = .5f * e;
-	Phi = M_PI_2F - 2.f * atan2(ts_num, ts_den);
+	Phi = M_PI_2F - 2.f * atan(exp(log_ts));
 	for (i = I_ITER; i; --i) {
 		con = e * sin(Phi);
-		dphi = M_PI_2F - 2.f * atan2(ts_num * powr(1.f - con, eccnth),
-                                     ts_den * powr(1.f + con, eccnth)) - Phi;
+		dphi = M_PI_2F - 2.f * atan(exp(log_ts + eccnth * (log1p(-con)-log1p(con)))) - Phi;
 		Phi += dphi;
 		if (all(fabs(dphi) <= ITOL))
 			break;

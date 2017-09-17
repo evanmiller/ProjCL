@@ -100,7 +100,7 @@ __kernel void pl_unproject_lambert_conformal_conic_e(
     
     rho = copysign(hypot(x, y), n);
     
-    phi = select(copysign(M_PI_2F, n), pl_phi2(pow(rho, 1.f/n), pow(c, 1.f/n), ecc), rho != 0.f);
+    phi = select(copysign(M_PI_2F, n), pl_phi2(log(rho/c)/n, ecc), rho != 0.f);
     lambda = atan2(x, y) / n;
     
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));

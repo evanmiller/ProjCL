@@ -130,7 +130,7 @@ static float _pl_mlfn(float phi, float sphi, float cphi, float *en) {
 static double _pl_qsfn(double sinphi, double e, double one_es) {
 	double con = e * sinphi;
 	return (one_es * (sinphi / (1.0 - con * con) -
-					  (.5 / e) * log((1.0 - con) / (1.0 + con))));
+					  (.5 / e) * (log1p(-con) - log1p(con))));
 }
 
 static double _pl_msfn(double sinphi, double cosphi, double es) {
@@ -198,7 +198,8 @@ cl_int pl_enqueue_kernel_albers_equal_area(cl_kernel kernel, PLContext *pl_ctx, 
 	float lam0 = lon0 * DEG_TO_RAD;
     float k0 = scale * info.major_axis;
     
-	float c, dd, rho0, n;
+	float rho0, cf, nf;
+	double c, n;
     double sinphi, cosphi;
 	
 	int secant; /* secant cone */
@@ -211,9 +212,8 @@ cl_int pl_enqueue_kernel_albers_equal_area(cl_kernel kernel, PLContext *pl_ctx, 
 		if (secant) {
 			n = .5 * (n + sin(phi2));
 		}
-		c = cosphi * cosphi + 2 * n * sinphi;
-		dd = 1. / n;
-		rho0 = dd * sqrt(c - 2 * n * sin(phi0));		
+		c = cosphi * cosphi / n + 2 * sinphi;
+		rho0 = sqrt((c - 2 * sin(phi0))/n);
 	} else {
 		double ml1, m1;
 		
@@ -229,10 +229,11 @@ cl_int pl_enqueue_kernel_albers_equal_area(cl_kernel kernel, PLContext *pl_ctx, 
 			n = (m1 * m1 - m2 * m2) / (ml2 - ml1);
 		}
         
-		c = m1 * m1 + n * ml1;
-		dd = 1. / n;
-		rho0 = dd * sqrt(c - n * _pl_qsfn(sin(phi0), info.ecc, info.one_ecc2));
+		c = m1 * m1 / n + ml1;
+		rho0 = sqrt((c - _pl_qsfn(sin(phi0), info.ecc, info.one_ecc2))/n);
 	}
+    cf = c;
+    nf = n;
 	
 	if (!_pl_spheroid_is_spherical(pl_ell)) {
 		error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &info.ec);
@@ -242,9 +243,8 @@ cl_int pl_enqueue_kernel_albers_equal_area(cl_kernel kernel, PLContext *pl_ctx, 
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &y0);
 	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &lam0);
 	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &rho0);
-	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &c);
-	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &dd);
-	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &n);
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &cf);
+	error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &nf);
     
 	if (error != CL_SUCCESS)
 		return error;
