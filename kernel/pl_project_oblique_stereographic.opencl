@@ -48,8 +48,8 @@ __kernel void pl_project_oblique_stereographic_e(
     /* Project ellipsoid onto sphere */
     float8 lambda = c0 * lambda_ell;
     float8 esinp = ecc * sin(phi_ell);
-    float8 phi = asin(tanh(log_k0 + c0 * log1p(tan(.5f*phi_ell)) - c0 * log1p(tan(-0.5f*phi_ell))
-        + 0.5f * c0 * ecc * log1p(-esinp) - 0.5f * c0 * ecc * log1p(esinp))); 
+    float8 phi = asin(tanh(log_k0 + c0 * (log1p(tan(.5f*phi_ell)) - log1p(tan(-0.5f*phi_ell)))
+        + 0.5f * c0 * ecc * (log1p(-esinp) - log1p(esinp)))); 
     // Gudermannian Function gd(x) = 2 atan(exp(x)) - M_PI_2 = asin(tanh(x))
 
     /* Project sphere onto plane */
