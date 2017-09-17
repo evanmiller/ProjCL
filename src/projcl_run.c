@@ -445,14 +445,15 @@ cl_int pl_enqueue_kernel_oblique_stereographic(cl_kernel kernel, PLContext *pl_c
         sinPhiC0 = sin(phiC0);
         cosPhiC0 = cos(phiC0);
 
+        float c0_f = c0;
         double k0 = tan(0.5 * phiC0 + M_PI_4) / (
                 pow(tan(0.5 * phi0 + M_PI_4), c0) *
                 pow((1.-info.ecc * sinPhi0)/(1.+info.ecc*sinPhi0), 0.5 * c0 * info.ecc) );
 
-        float c0_f = c0;
-        float k0_f = k0;
+        float log_k0 = log(k0);
+
 		error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &c0_f);
-		error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &k0_f);
+		error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &log_k0);
 	} else {
         sinPhiC0 = sinPhi0;
         cosPhiC0 = cosPhi0;

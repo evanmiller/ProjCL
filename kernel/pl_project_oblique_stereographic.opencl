@@ -1,22 +1,20 @@
 float8 srat(float8 esinp, float exp1);
-float8 phi_sph2ell(float8 phi, float ecc, float k0, float c0);
+float8 phi_sph2ell(float8 phi, float ecc, float log_k0, float c0);
 
-float8 srat(float8 esinp, float exp1) {
-    return powr((1.f-esinp)/(1.f+esinp), exp1);
-}
-
-float8 phi_sph2ell(float8 phi, float ecc, float k0, float c0) {
+float8 phi_sph2ell(float8 phi, float ecc, float log_k0, float c0) {
     int i;
-    float8 num;
+    float8 log_num;
     float8 phi_ell;
+    float8 esinp;
     
     i = OBLIQUE_STEREOGRAPHIC_N_ITER;
-    num = powr(tan(0.5f * phi + M_PI_4F)/k0, 1.f/c0);
+    log_num = (log1p(tan(0.5f * phi)) - log1p(tan(-0.5f * phi)) - log_k0)/c0;
     phi_ell = phi;
 
     do {
         phi = phi_ell;
-        phi_ell = 2.f * atan(num * srat(ecc * sin(phi), -0.5f * ecc)) - M_PI_2F;
+        esinp = ecc * sin(phi);
+        phi_ell = asin(tanh(log_num - 0.5f * ecc * log1p(-esinp) + 0.5f * ecc * log1p(esinp)));
     } while (any(fabs(phi_ell - phi) > TOL7) && --i);
 
     return phi_ell;
@@ -36,7 +34,7 @@ __kernel void pl_project_oblique_stereographic_e(
     float y0,
 
     float c0,
-    float k0,
+    float log_k0,
 
     float lambda0,
     float sinPhiC0,
@@ -49,8 +47,10 @@ __kernel void pl_project_oblique_stereographic_e(
 
     /* Project ellipsoid onto sphere */
     float8 lambda = c0 * lambda_ell;
-    float8 phi = 2.f * atan(k0 * powr(tan(.5f * phi_ell + M_PI_4F), c0) *
-            srat(ecc * sin(phi_ell), .5f * c0 * ecc) ) - M_PI_2F;
+    float8 esinp = ecc * sin(phi_ell);
+    float8 phi = asin(tanh(log_k0 + c0 * log1p(tan(.5f*phi_ell)) - c0 * log1p(tan(-0.5f*phi_ell))
+        + 0.5f * c0 * ecc * log1p(-esinp) - 0.5f * c0 * ecc * log1p(esinp))); 
+    // Gudermannian Function gd(x) = 2 atan(exp(x)) - M_PI_2 = asin(tanh(x))
 
     /* Project sphere onto plane */
     float8 sinPhi, cosPhi;
@@ -83,7 +83,7 @@ __kernel void pl_unproject_oblique_stereographic_e(
     float y0,
 
     float c0,
-    float k0,
+    float log_k0,
 
 	float lambda0,
     float sinPhiC0,
@@ -108,7 +108,7 @@ __kernel void pl_unproject_oblique_stereographic_e(
 
     /* Project sphere onto ellipsoid */
     lambda = lambda / c0;
-    phi = phi_sph2ell(phi, ecc, k0, c0);
+    phi = phi_sph2ell(phi, ecc, log_k0, c0);
 
     xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
     xy_out[i].odd = degrees(phi);
