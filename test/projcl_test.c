@@ -266,14 +266,14 @@ int compare_points(const float *points1, const float *points2, const float *ref_
         double delta_x = fabs(points1[2*i] - points2[2*i]);
         double delta_y = fabs(points1[2*i+1] - points2[2*i+1]);
         double norm = hypot(points1[2*i], points1[2*i+1]);
-        if (delta_x / norm > TOL || delta_y / norm > TOL) {
+        if ((delta_x > TOL && delta_x / norm > TOL) || (delta_y > TOL && delta_y / norm > TOL)) {
             failures++;
-            if (delta_x > max_delta_x) {
-                max_delta_x = delta_x;
+            if (delta_x / norm > max_delta_x) {
+                max_delta_x = delta_x / norm;
                 max_delta_x_i = i;
             }
-            if (delta_y > max_delta_y) {
-                max_delta_y = delta_y;
+            if (delta_y / norm > max_delta_y) {
+                max_delta_y = delta_y / norm;
                 max_delta_y_i = i;
             }
         }
@@ -281,15 +281,15 @@ int compare_points(const float *points1, const float *points2, const float *ref_
     if (failures) {
         printf("%d failures\n", failures);
         printf("**** Max longitudinal error: (%f, %f) => (%f, %f)\n"
-               "                             (%f, %f) => (%f, %f) [%lf @ %d]\n",
+               "                             (%f, %f) => (%f, %f) [%.3lf%% @ %d]\n",
                ref_points[2*max_delta_x_i], ref_points[2*max_delta_x_i+1], points1[2*max_delta_x_i], points1[2*max_delta_x_i+1],
                ref_points[2*max_delta_x_i], ref_points[2*max_delta_x_i+1], points2[2*max_delta_x_i], points2[2*max_delta_x_i+1],
-               max_delta_x, max_delta_x_i);
+               100 * max_delta_x, max_delta_x_i);
         printf("**** Max latitudinal error: (%f, %f) => (%f, %f)\n"
-               "                            (%f, %f) => (%f, %f) [%lf @ %d]\n",
+               "                            (%f, %f) => (%f, %f) [%.3lf%% @ %d]\n",
                ref_points[2*max_delta_y_i], ref_points[2*max_delta_y_i+1], points1[2*max_delta_y_i], points1[2*max_delta_y_i+1],
                ref_points[2*max_delta_y_i], ref_points[2*max_delta_y_i+1], points2[2*max_delta_y_i], points2[2*max_delta_y_i+1],
-               max_delta_y, max_delta_y_i);
+               100 * max_delta_y, max_delta_y_i);
     } else {
         if (isnan(speedup)) {
             printf("ok\n");
