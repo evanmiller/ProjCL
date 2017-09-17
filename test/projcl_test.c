@@ -22,7 +22,7 @@
 #define RAD_TO_DEG   57.29577951308232
 #endif
 
-#define TEST_POINTS 10000
+#define TEST_POINTS 40000
 #define TOL 1.e-5
 
 typedef struct test_params_s {
@@ -361,11 +361,24 @@ int main(int argc, char **argv) {
 
     float orig_points[2*TEST_POINTS];
     int i;
+    int offset = 0;
     PLProjectionBuffer *orig_buf = NULL;
 
-    for (i=0; i<TEST_POINTS; i++) {
-        orig_points[2*i] = -60.0 + 120.0 * (i%100) / (TEST_POINTS-1);
-        orig_points[2*i+1] = -60.0 + 120.0 * (i/100) / (TEST_POINTS-1);
+    for (i=0; i<TEST_POINTS/4; i++) { /* grid */
+        orig_points[offset++] = -120.0 + 240.0 * (i%100) / (TEST_POINTS/100/4-1);
+        orig_points[offset++] = -85.0 + 170.0 * (i/100) / (TEST_POINTS/100/4-1);
+    }
+    for (i=0; i<TEST_POINTS/4; i++) { /* circle */
+        orig_points[offset++] = 60.0 * cos(2 * M_PI * i/(TEST_POINTS/4-1));
+        orig_points[offset++] = 60.0 * sin(2 * M_PI * i/(TEST_POINTS/4-1));
+    }
+    for (i=0; i<TEST_POINTS/4; i++) { /* central meridian */
+        orig_points[offset++] = 0.0;
+        orig_points[offset++] = -85.0 + 170.0 * i/(TEST_POINTS/4-1);
+    }
+    for (i=0; i<TEST_POINTS/4; i++) { /* central latitude */
+        orig_points[offset++] = -120.0 + 240.0 * i/(TEST_POINTS/4-1);
+        orig_points[offset++] = 0.0;
     }
 
     orig_buf = pl_load_projection_data(ctx, orig_points, TEST_POINTS, 1, &error);
@@ -461,7 +474,7 @@ int compare_proj4_inv(const float *proj_points, const float *orig_points,
       orig_points_proj4[2*i+1] = points_proj4[2*i+1] * RAD_TO_DEG;
     }
 
-    failures = compare_points(orig_points_proj4, orig_points, proj_points,
+    failures = compare_points(orig_points, orig_points_proj4, proj_points,
             TEST_POINTS, "...inverse same as Proj.4", proj4_secs / projcl_secs);
 #endif
     return failures;
@@ -516,7 +529,7 @@ int compare_proj4_fwd(const float *orig_points, const float *proj_points,
       proj_points_proj4[2*i+1] = points_proj4[2*i+1];
     }
 
-    failures = compare_points(proj_points_proj4, proj_points, orig_points,
+    failures = compare_points(proj_points, proj_points_proj4, orig_points,
             TEST_POINTS, "...forward same as Proj.4", proj4_secs / projcl_secs);
 #endif
     return failures;
