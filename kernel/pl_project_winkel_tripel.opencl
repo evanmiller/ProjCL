@@ -69,7 +69,7 @@ __kernel void pl_unproject_winkel_tripel_s(
     float8 invDet;
     float8 dInvC32;
     
-    int iter = 4;
+    int iter = WINKEL_TRIPEL_N_ITER;
     do {
         sin2Phi = 2.f * sinPhi * cosPhi;
         sinLambda2 = sincos(.5f * lambda, &cosLambda2);
