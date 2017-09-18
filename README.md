@@ -6,12 +6,11 @@ ProjCL: OpenCL-powered map projection and geodesic library
 ProjCL is a C interface to [OpenCL](https://en.wikipedia.org/wiki/OpenCL)
 routines that perform various geographic computations, including map
 projection, geodesic (distance) calculations, and datum conversion. For
-projection calculations it is several times faster than
-[Proj.4](http://proj4.org) on the CPU, and could be even faster on a GPU for
-large batches but I haven't actually done much GPU performance testing. For
-datum shifts ProjCL is smarter than Proj.4 because it does some matrix math in
-advance, and generally faster because OpenCL can utilize all cores and the
-CPU's vector capabilities.
+projection calculations it is often 4-10X faster than
+[Proj.4](http://proj4.org) on the CPU, and 15-30X faster on a low-end GPU with
+large batches of coordinates. For datum shifts ProjCL is smarter than Proj.4
+because it does some matrix math in advance, and generally faster because
+OpenCL can utilize all cores and the CPU's vector capabilities.
 
 Most projection routines were originally adapted from Proj.4 code, with
 branches replaced with select() statements and various tweaks implemented along

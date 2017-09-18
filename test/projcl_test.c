@@ -26,9 +26,9 @@
 #define TEST_POINTS 200000
 #define TOL 1.e-5
 #define DEGREES_TOL 2.5/3600. // two and a half arcseconds
-#define METERS_TOL 10.0      // ten meters
+#define METERS_TOL 11.0      // eleven meters
 
-#define MIN_LAT -50.0 // shifted up for benefit of conic projections
+#define MIN_LAT -40.0 // shifted up for benefit of conic projections
 #define MAX_LAT 85.0
 
 #define MIN_LON -60.0 // kind of tight for benefit of transverse mercator
