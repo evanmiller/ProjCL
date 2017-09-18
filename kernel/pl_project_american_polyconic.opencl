@@ -53,13 +53,14 @@ __kernel void pl_unproject_american_polyconic_s(
 
     int iter = AMERICAN_POLYCONIC_N_ITER;
 
-    phi = y + phi0;
+    phi = (y + phi0); // * cos(.5f * x); need a better initial guess
     sinPhi = sincos(phi, &cosPhi);
     lambda = asin(x * sinPhi / cosPhi) / sinPhi;
-    sinLSinPhi = sincos(lambda * sinPhi, &cosLSinPhi);
-    cosLSinPhi1 = sinLSinPhi * tan(0.5f * lambda * sinPhi); // half-angle formula
-	
-    do { /* Newton-Raphson w/ full Jacobian matrix */
+
+    do { // Newton-Raphson w/ full Jacobian matrix 
+        sinLSinPhi = sincos(lambda * sinPhi, &cosLSinPhi);
+        cosLSinPhi1 = sinLSinPhi * tan(0.5f * lambda * sinPhi); // half-angle formula
+
         c = lambda * cosPhi * cosPhi / sinPhi;
 
         f1 = cosPhi * sinLSinPhi / sinPhi - x;
@@ -79,8 +80,6 @@ __kernel void pl_unproject_american_polyconic_s(
         lambda -= dLam;
 
         sinPhi = sincos(phi, &cosPhi);
-        sinLSinPhi = sincos(lambda * sinPhi, &cosLSinPhi);
-        cosLSinPhi1 = sinLSinPhi * tan(0.5f * lambda * sinPhi);
 	} while (--iter);
 
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
@@ -113,7 +112,8 @@ __kernel void pl_project_american_polyconic_e(
 	float8 ms, sinphi, cosphi, sinE, x, y;
 	
 	sinphi = sincos(phi, &cosphi);
-	ms = pl_msfn(sinphi, cosphi, ecc2) / sinphi;
+	ms = cosphi / sinphi / sqrt(1.f - ecc2 * sinphi * sinphi);
+
     sinE = sin(lambda * sinphi);
 
 	x = ms * sinE;
@@ -144,36 +144,57 @@ __kernel void pl_unproject_american_polyconic_e(
 	int i = get_global_id(0);
 	
 	float8 x = (xy_in[i].even - x0) / scale;
-	float8 y = (xy_in[i].odd - y0) / scale + ml0;
+	float8 y = (xy_in[i].odd - y0) / scale;
 	
 	float8 lambda, phi;
 	
-	float8 r = y * y + x * x;
+	float8 c1, c2, sinPhi, cosPhi, tanPhi, sinLSinPhi, cosLSinPhi;
+    float8 sinL2SinPhi, cosL2SinPhi;
+    float8 mlp;
+
+    float8 dLam, dPhi, invDet;
+    float8 f1, f2, df1phi, df2phi, df1lam, df2lam;
 	
-	float8 c, sinphi, cosphi, sincosphi, ml, mlb, mlp, dPhi;
-    int iter = AMERICAN_POLYCONIC_N_ITER;
-		
-    phi = y;
+    int iter = AMERICAN_POLYCONIC_N_ITER + 1; // seems to require more than spherical case... maybe a bug?
 
-    do {
-		sinphi = sincos(phi, &cosphi);
-		sincosphi = sinphi * cosphi;
-		mlp = sqrt(1.f - ecc2 * sinphi * sinphi);
-		c = sinphi * mlp / cosphi;
-		ml = pl_mlfn(phi, sinphi, cosphi, en);
-		mlb = ml * ml + r;
-		mlp = one_ecc2 / (mlp * mlp * mlp);
-		
-		dPhi = (ml + ml + c * mlb - 2.f * y * (c * ml + 1.f)) / (
-			ecc2 * sincosphi * (mlb - 2.f * y * ml) / c +
-			2.f * (y - ml) * (c * mlp - 1.f / sincosphi) - mlp - mlp);
+    phi = y + phi0;
+    // 1 iteration of Newton's method to fix initial guess
+    phi -= (pl_mlfn(phi, sin(phi), cos(phi), en) - (y + ml0)) / pl_mlfn1(phi, sin(phi), cos(phi), en);
 
-		phi += dPhi;
-	} while (--iter);
+    sinPhi = sincos(phi, &cosPhi);
+    mlp = sqrt(1.f - ecc2 * sinPhi * sinPhi);
+	lambda = asin(x * sinPhi / cosPhi * mlp) / sinPhi;
 
-	c = sin(phi);
-	lambda = asin(x * tan(phi) * sqrt(1.f - ecc2 * c * c)) / c;
-	
+    do { // Newton-Raphson
+        tanPhi = sinPhi / cosPhi;
+
+        sinLSinPhi = sincos(lambda * sinPhi, &cosLSinPhi);
+        sinL2SinPhi = sincos(.5f * lambda * sinPhi, &cosL2SinPhi);
+
+        f1 = sinLSinPhi / tanPhi / mlp - x;
+        f2 = pl_mlfn(phi, sinPhi, cosPhi, en) - ml0 + x * sinL2SinPhi / cosL2SinPhi - y;
+
+        df1lam = cosPhi / mlp * cosLSinPhi;
+        df2lam = cosPhi / mlp * sinLSinPhi;
+
+        c1 = ecc2 * (1.f + cosPhi * cosPhi) / (mlp * (1.f - ecc2 * sinPhi * sinPhi));
+        c2 = 1.f / (sinPhi * sinPhi * mlp * (1.f - ecc2 * sinPhi * sinPhi));
+
+        df1phi = lambda * cosPhi / tanPhi / mlp * cosLSinPhi + sinLSinPhi * (c1 - c2);
+        df2phi = pl_mlfn1(phi, sinPhi, cosPhi, en) + 0.5f * lambda * x * cosPhi / cosL2SinPhi / cosL2SinPhi;
+
+        invDet = 1.f / (df1phi * df2lam - df2phi * df1lam);
+
+        dPhi = (f1 * df2lam - f2 * df1lam) * invDet;
+        dLam = (f2 * df1phi - f1 * df2phi) * invDet;
+
+        phi -= dPhi;
+        lambda -= dLam;
+
+        sinPhi = sincos(phi, &cosPhi);
+        mlp = sqrt(1.f - ecc2 * sinPhi * sinPhi);
+    } while(--iter);
+
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
 	xy_out[i].odd = degrees(phi);
 }

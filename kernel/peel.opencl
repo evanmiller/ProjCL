@@ -36,8 +36,7 @@
 #define FC8 .01785714285714285714f
 
 float8 pl_mlfn(float8 phi, float8 sphi, float8 cphi, float8 en);
-float8 pl_inv_mlfn(float8 argphi, float es, float8 en);
-float8 pl_msfn(float8 sinphi, float8 cosphi, float es);
+float8 pl_mlfn1(float8 phi, float8 sphi, float8 cphi, float8 en);
 float8 pl_qsfn(float8 sinphi, float e, float one_es);
 float8 pl_phi2(float8 log_ts, float e);
 float8 pl_mod_pi(float8 phi);
@@ -49,26 +48,12 @@ float8 pl_mlfn(float8 phi, float8 sphi, float8 cphi, float8 en) {
 	return(en.s0 * phi - cphi * (en.s1 + sphi*(en.s2 + sphi*(en.s3 + sphi*en.s4))));
 }
 
-float8 pl_inv_mlfn(float8 argphi, float es, float8 en) {
-    float8 phi, sinPhi, cosPhi, t;
-    float k = 1.f/(1.f-es);
-
-    phi = argphi;
-    int iter = I_ITER;
-    do {
-        sinPhi = sincos(phi, &cosPhi);
-        t = 1.f - es * sinPhi * sinPhi;
-        t = (pl_mlfn(phi, sinPhi, cosPhi, en) - argphi) * (t * sqrt(t)) * k;
-        phi -= t;
-        if (all(fabs(t) < ITOL))
-            break;
-    } while(--iter);
-
-    return phi;
-}
-
-float8 pl_msfn(float8 sinphi, float8 cosphi, float es) {
-	return (cosphi / sqrt(1.f - es * sinphi * sinphi));
+/* first derivative */
+float8 pl_mlfn1(float8 phi, float8 sphi, float8 cphi, float8 en) {
+    cphi *= cphi;
+    sphi *= sphi;
+    return en.s0 - (en.s1*(cphi-sphi) + sphi*(en.s2*(3*cphi-sphi) 
+                    + sphi*(en.s3*(5*cphi-sphi) + sphi*(en.s4*(7*cphi-sphi)))));
 }
 
 float8 pl_qsfn(float8 sinphi, float e, float one_es) {
