@@ -92,8 +92,9 @@ typedef struct PLSpheroidInfo_s {
 	float		inverse_flattening;
 	float		en[8];
     float       apa[4];
-    float       kruger_a;
-	float		kruger_coef[8];
+    float       krueger_A;
+	float		krueger_alpha[8];
+	float		krueger_beta[8];
 } PLSpheroidInfo;
 
 typedef struct PLContext_s {

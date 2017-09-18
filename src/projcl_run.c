@@ -120,11 +120,10 @@ static struct pl_matrix pl_affine_transform_make(
 }
 
 
-static float _pl_mlfn(float phi, float sphi, float cphi, float *en) {
+static double _pl_mlfn(double phi, double sphi, double cphi, float *en) {
 	cphi *= sphi;
 	sphi *= sphi;
-	return(en[0] * phi - cphi * (en[1] + sphi*(en[2]
-											   + sphi*(en[3] + sphi*en[4]))));
+	return(en[0] * phi - cphi * (en[1] + sphi*(en[2] + sphi*(en[3] + sphi*en[4]))));
 }
 
 static double _pl_qsfn(double sinphi, double e, double one_es) {
@@ -263,7 +262,7 @@ cl_int pl_enqueue_kernel_american_polyconic(cl_kernel kernel, PLContext *pl_ctx,
 	float phi0 = lat0 * DEG_TO_RAD;
 	float lambda0 = lon0 * DEG_TO_RAD;
 	
-	float ml0 = _pl_mlfn(phi0, sinf(phi0), cosf(phi0), info.en);
+	float ml0 = _pl_mlfn(phi0, sin(phi0), cos(phi0), info.en);
 	
 	float k0 = scale * info.major_axis;
 	
@@ -498,14 +497,17 @@ cl_int pl_enqueue_kernel_transverse_mercator(cl_kernel kernel, PLContext *pl_ctx
     PLSpheroidInfo info = _pl_get_spheroid_info(pl_ell);
     error = _pl_set_kernel_args(kernel, xy_in, xy_out, count, &info, &argc);
     
-    float k0 = scale * info.major_axis * info.kruger_a;
+    float k0 = scale * info.major_axis * info.krueger_A;
     float lambda0 = lon0 * DEG_TO_RAD;
     
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &k0);
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &x0);
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &y0);
     error |= clSetKernelArg(kernel, argc++, sizeof(cl_float), &lambda0);
-    error |= clSetKernelArg(kernel, argc++, sizeof(cl_float8), info.kruger_coef);
+    if (!_pl_spheroid_is_spherical(pl_ell)) {
+        error |= clSetKernelArg(kernel, argc++, sizeof(cl_float8), info.krueger_alpha);
+        error |= clSetKernelArg(kernel, argc++, sizeof(cl_float8), info.krueger_beta);
+    }
     if (error != CL_SUCCESS)
         return error;
     

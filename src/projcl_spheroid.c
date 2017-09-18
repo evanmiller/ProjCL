@@ -45,7 +45,7 @@ int _pl_spheroid_is_spherical(PLSpheroid ell) {
 }
 
 PLSpheroidInfo _pl_get_spheroid_info(PLSpheroid pl_ell) {
-	PLSpheroidInfo info;
+	PLSpheroidInfo info = { 0 };
 	info.tag = pl_ell;
 	info.minor_axis = NAN;
 	info.inverse_flattening = HUGE_VAL;
@@ -79,22 +79,42 @@ PLSpheroidInfo _pl_get_spheroid_info(PLSpheroid pl_ell) {
 
     double n = (info.major_axis - info.minor_axis) / (info.major_axis + info.minor_axis);
     double n2 = n * n;
-    double n3 = n2 * n;
-    double n4 = n2 * n2;
 
-    info.kruger_a = (1.0 + 0.25 * n2 + n4 / 64.0) / (1.0 + n);
+    info.krueger_A = (1.0 + (0.25 + 1./64. * n2) * n2)  / (1.0 + n);
 
-    /* alpha */
-    info.kruger_coef[0] = 0.5 * n - 2.0/3.0 * n2 + 0.3125 * n3 + 41.0/180.0 * n4;
-    info.kruger_coef[1] = 13.0/48.0 * n2 - 0.6 * n3 + 557.0 / 1440.0 * n4;
-    info.kruger_coef[2] = 61.0/240.0 * n3 - 103.0/140.0 * n4;
-    info.kruger_coef[3] = 49561.0 / 161280.0 * n4;
+    /*
+    info.krueger_alpha[0] = (-127./288. + (7891./37800. +             (72161./387072. - 18975107./50803200.*n) * n) * n) * n;
+    info.krueger_alpha[1] = (281./630.  + (-1983433./1935360. +      (12769./28800. + 148003883./174182400.*n) * n) * n) * n;
+    info.krueger_alpha[2] = (15061./26880. + (167603./181440. + (-67102379./29030400. + 79682431./79833600.*n) * n) * n) * n;
+    info.krueger_alpha[3] = (-179./168. + (6601661./7257600.  + (   97445./49896.+ 40176129013./7664025600.*n) * n) * n) * n;
+    */
 
-    /* beta */
-    info.kruger_coef[4] = 0.5 * n - 2.0/3.0 * n2 + 37.0 / 96.0 * n3 - 1.0 / 360.0 * n4;
-    info.kruger_coef[5] = 1.0/48.0 * n2 + 1.0 / 15.0 * n3 - 437.0 / 1440.0 * n4;
-    info.kruger_coef[6] = 17.0/480.0 * n3 - 37.0/840.0 * n4;
-    info.kruger_coef[7] = 4397.0 / 161280.0 * n4;
+    info.krueger_alpha[0] = (.5 + (-2./3. + (.3125 +  (41./180. + info.krueger_alpha[0]) * n) * n) * n) * n;
+    info.krueger_alpha[1] =       (13./48.+ (-.6   + (557./1440.+ info.krueger_alpha[1]) * n) * n) * n  * n;
+    info.krueger_alpha[2] =             (61./240.  - (103./140. + info.krueger_alpha[2]) * n) * n  * n  * n;
+    info.krueger_alpha[3] =                      (49561./161280.+ info.krueger_alpha[3]) * n  * n  * n  * n;
+
+    /*
+    info.krueger_alpha[4] = (34729./80640. + (-3418889./1995840. + (14644087./9123840. + 2605413599./622702080.*n) * n) * n) * n * n4;
+    info.krueger_alpha[5] = (212378941./319334400. + (-30705481./10378368.         + 175214326799./58118860800.*n) * n) * n  * n * n4;
+    */
+
+    /*
+    info.krueger_beta[0] = (-81./512. + (96199./604800. + (-5406467./38707200. +   7944359./67737600.*n) * n) * n) * n;
+    info.krueger_beta[1] = (-46./105. + (-1118711./3870720. + (51841./1209600. + 24749483./348364800.*n) * n) * n) * n;
+    info.krueger_beta[2] = (-209./4480. + (5569./90720. + (9261899./58060800.    - 6457463./17740800.*n) * n) * n) * n;
+    info.krueger_beta[3] = (-11./504. + (-830251./7257600. + (466511./2494800.+324154477./7664025600.*n) * n) * n) * n;
+    */
+
+    info.krueger_beta[0] = (.5 + (-2./3. + (37./96. + (-1./360. + info.krueger_beta[0]) * n) * n) * n) * n;
+    info.krueger_beta[1] =       (1./48. + (1./15. + (-437./1440.+info.krueger_beta[1]) * n) * n) * n  * n;
+    info.krueger_beta[2] =               (17./480. + (-37./840.  +info.krueger_beta[2]) * n) * n  * n  * n;
+    info.krueger_beta[3] =                         (4397./161280.+info.krueger_beta[3]) * n  * n  * n  * n;
+
+    /*
+    info.krueger_beta[4] = (4583./161280. + (-108847./3991680. + (-8005831./63866880. + 22894433./124540416.*n) * n) * n) * n * n4;
+    info.krueger_beta[5] =        (20648693./638668800. + (-16363163./518918400. - 2204645983./12915302400. *n) * n) * n  * n * n4;
+    */
 
 	return info;
 }
