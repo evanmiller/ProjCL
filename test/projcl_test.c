@@ -25,6 +25,14 @@
 
 #define TEST_POINTS 200000
 #define TOL 1.e-5
+#define DEGREES_TOL 2.5/3600. // two and a half arcseconds
+#define METERS_TOL 10.0      // ten meters
+
+#define MIN_LAT -50.0 // shifted up for benefit of conic projections
+#define MAX_LAT 85.0
+
+#define MIN_LON -60.0 // kind of tight for benefit of transverse mercator
+#define MAX_LON 60.0
 
 typedef struct test_params_s {
   char   name[80];
@@ -244,7 +252,7 @@ static test_params_t winkel_tripel_tests[] = {
 
 int compile_module(PLContext *ctx, unsigned int module, char *name);
 int compare_points(const float *points1, const float *points2, const float *ref_points,
-        int count, char *name, double speedup);
+        int count, char *name, double tolerance, double speedup);
 uint64_t test_albers_equal_area(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 uint64_t test_american_polyconic(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 uint64_t test_lambert_azimuthal_equal_area(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
@@ -255,8 +263,8 @@ uint64_t test_robinson(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig
 uint64_t test_transverse_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 uint64_t test_winkel_tripel(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 
-int compare_points(const float *points1, const float *points2, const float *ref_points,
-        int count, char *name, double speedup) {
+int compare_points(const float *points1, const float *points2, const float *ref_points, int count,
+        char *name, double tolerance, double speedup) {
     int i;
     int failures = 0;
     printf("-- %s... ", name);
@@ -266,15 +274,14 @@ int compare_points(const float *points1, const float *points2, const float *ref_
     for (i=0; i<count; i++) {
         double delta_x = fabs(points1[2*i] - points2[2*i]);
         double delta_y = fabs(points1[2*i+1] - points2[2*i+1]);
-        double norm = hypot(points1[2*i], points1[2*i+1]);
-        if ((delta_x > TOL && delta_x / norm > TOL) || (delta_y > TOL && delta_y / norm > TOL)) {
+        if (delta_x > tolerance || delta_y > tolerance) {
             failures++;
-            if (delta_x / norm > max_delta_x) {
-                max_delta_x = delta_x / norm;
+            if (delta_x > max_delta_x) {
+                max_delta_x = delta_x;
                 max_delta_x_i = i;
             }
-            if (delta_y / norm > max_delta_y) {
-                max_delta_y = delta_y / norm;
+            if (delta_y > max_delta_y) {
+                max_delta_y = delta_y;
                 max_delta_y_i = i;
             }
         }
@@ -282,15 +289,15 @@ int compare_points(const float *points1, const float *points2, const float *ref_
     if (failures) {
         printf("%d failures\n", failures);
         printf("**** Max longitudinal error: (%f, %f) => (%f, %f)\n"
-               "                             (%f, %f) => (%f, %f) [%.3lf%% @ %d]\n",
+               "                             (%f, %f) => (%f, %f) [%.4lf @ %d]\n",
                ref_points[2*max_delta_x_i], ref_points[2*max_delta_x_i+1], points1[2*max_delta_x_i], points1[2*max_delta_x_i+1],
                ref_points[2*max_delta_x_i], ref_points[2*max_delta_x_i+1], points2[2*max_delta_x_i], points2[2*max_delta_x_i+1],
-               100 * max_delta_x, max_delta_x_i);
+               max_delta_x, max_delta_x_i);
         printf("**** Max latitudinal error: (%f, %f) => (%f, %f)\n"
-               "                            (%f, %f) => (%f, %f) [%.3lf%% @ %d]\n",
+               "                            (%f, %f) => (%f, %f) [%.4lf @ %d]\n",
                ref_points[2*max_delta_y_i], ref_points[2*max_delta_y_i+1], points1[2*max_delta_y_i], points1[2*max_delta_y_i+1],
                ref_points[2*max_delta_y_i], ref_points[2*max_delta_y_i+1], points2[2*max_delta_y_i], points2[2*max_delta_y_i+1],
-               100 * max_delta_y, max_delta_y_i);
+               max_delta_y, max_delta_y_i);
     } else {
         if (isnan(speedup)) {
             printf("ok\n");
@@ -366,12 +373,12 @@ int main(int argc, char **argv) {
     PLProjectionBuffer *orig_buf = NULL;
 
     for (i=0; i<TEST_POINTS/2; i++) { /* grid */
-        orig_points[offset++] = -50.0 + 100.0 * (i%500) / (500-1);
-        orig_points[offset++] = -85.0 + 170.0 * (i/500) / (TEST_POINTS/2/500-1);
+        orig_points[offset++] = MIN_LON + (MAX_LON - MIN_LON) * (i%500) / (500-1);
+        orig_points[offset++] = MIN_LAT + (MAX_LAT - MIN_LAT) * (i/500) / (TEST_POINTS/2/500-1);
     }
     for (i=0; i<TEST_POINTS/2; i++) { /* circle */
-        orig_points[offset++] = 60.0 * cos(2 * M_PI * i/(TEST_POINTS/2-1));
-        orig_points[offset++] = 60.0 * sin(2 * M_PI * i/(TEST_POINTS/2-1));
+        orig_points[offset++] = MIN_LAT * cos(2 * M_PI * i/(TEST_POINTS/2-1));
+        orig_points[offset++] = MIN_LAT * sin(2 * M_PI * i/(TEST_POINTS/2-1));
     }
 
     orig_buf = pl_load_projection_data(ctx, orig_points, TEST_POINTS, 1, &error);
@@ -470,8 +477,8 @@ int compare_proj4_inv(const float *proj_points, const float *orig_points,
       orig_points_proj4[2*i+1] = points_proj4[2*i+1] * RAD_TO_DEG;
     }
 
-    failures = compare_points(orig_points, orig_points_proj4, proj_points,
-            TEST_POINTS, "...inverse same as Proj.4", proj4_secs / projcl_secs);
+    failures = compare_points(orig_points, orig_points_proj4, proj_points, TEST_POINTS, 
+            "...inverse same as Proj.4", DEGREES_TOL, proj4_secs / projcl_secs);
 #endif
     return failures;
 }
@@ -525,8 +532,8 @@ int compare_proj4_fwd(const float *orig_points, const float *proj_points,
       proj_points_proj4[2*i+1] = points_proj4[2*i+1];
     }
 
-    failures = compare_points(proj_points, proj_points_proj4, orig_points,
-            TEST_POINTS, "...forward same as Proj.4", proj4_secs / projcl_secs);
+    failures = compare_points(proj_points, proj_points_proj4, orig_points, TEST_POINTS, 
+            "...forward same as Proj.4", METERS_TOL, proj4_secs / projcl_secs);
 #endif
     return failures;
 }
@@ -577,8 +584,8 @@ uint64_t test_albers_equal_area(PLContext *ctx,
 
         pl_unload_projection_data(proj_buf);
 
-        consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name, NAN);
+        consistency_failures += compare_points(orig_points, orig_points2, proj_points, TEST_POINTS, 
+                test.name, DEGREES_TOL, NAN);
 
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "aea", test);
@@ -621,7 +628,7 @@ uint64_t test_american_polyconic(PLContext *ctx,
         pl_unload_projection_data(proj_buf);
 
         consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name, NAN);
+                TEST_POINTS, test.name, DEGREES_TOL, NAN);
 
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "poly", test);
@@ -664,7 +671,7 @@ uint64_t test_lambert_azimuthal_equal_area(PLContext *ctx,
         pl_unload_projection_data(proj_buf);
 
         consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name, NAN);
+                TEST_POINTS, test.name, DEGREES_TOL, NAN);
 
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "laea", test);
@@ -706,7 +713,7 @@ uint64_t test_lambert_conformal_conic(PLContext *ctx,
         pl_unload_projection_data(proj_buf);
 
         consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name, NAN);
+                TEST_POINTS, test.name, DEGREES_TOL, NAN);
 
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "lcc", test);
@@ -745,7 +752,7 @@ uint64_t test_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig
         pl_unload_projection_data(proj_buf);
 
         consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name, NAN);
+                TEST_POINTS, test.name, DEGREES_TOL, NAN);
 
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "merc", test);
@@ -786,7 +793,7 @@ uint64_t test_oblique_stereographic(PLContext *ctx, PLProjectionBuffer *orig_buf
         pl_unload_projection_data(proj_buf);
 
         consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name, NAN);
+                TEST_POINTS, test.name, DEGREES_TOL, NAN);
 
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "sterea", test);
@@ -825,7 +832,7 @@ uint64_t test_robinson(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig
         pl_unload_projection_data(proj_buf);
 
         consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name, NAN);
+                TEST_POINTS, test.name, DEGREES_TOL, NAN);
 
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "robin", test);
@@ -865,7 +872,7 @@ uint64_t test_transverse_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, 
         pl_unload_projection_data(proj_buf);
 
         consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name, NAN);
+                TEST_POINTS, test.name, DEGREES_TOL, NAN);
 
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, test.ell == PL_SPHEROID_SPHERE ? "tmerc" : "etmerc", test);
@@ -907,7 +914,7 @@ uint64_t test_winkel_tripel(PLContext *ctx, PLProjectionBuffer *orig_buf, float 
         pl_unload_projection_data(proj_buf);
 
         consistency_failures += compare_points(orig_points, orig_points2, proj_points,
-                TEST_POINTS, test.name, NAN);
+                TEST_POINTS, test.name, DEGREES_TOL, NAN);
 
         sprintf_proj4(orig_string, "latlong", test);
         sprintf_proj4(proj_string, "wintri", test);
