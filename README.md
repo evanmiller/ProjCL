@@ -251,3 +251,6 @@ Some tips on writing OpenCL routines:
 * Use `any` and `all` for break conditions
 * Use `select` or the ternary operator for conditional assignments
 * Use `sincos` if you need the sine and cosine of the same angle
+* Double-angle and half-angle formulas are your friend
+* `log(tan(M_PI_4 + 0.5*x)) == asinh(tan(x))`
+* `2*atan(exp(x)) - M_PI_2 == asin(tanh(x))`

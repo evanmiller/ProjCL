@@ -500,7 +500,7 @@ cl_int pl_enqueue_kernel_lambert_conformal_conic(PLContext *pl_ctx, cl_kernel ke
     
     if (_pl_spheroid_is_spherical(params->spheroid)) {
         if (secant)
-            n = log(cosphi1 / cos(phi2)) / log(tan(M_PI_4 + .5 * phi2) / tan(M_PI_4 + .5 * phi1));
+            n = log(cosphi1 / cos(phi2)) / (asinh(tan(phi2)) - asinh(tan(phi1)));
         c = cosphi1 * pow(tan(M_PI_4 + .5 * phi1), n) / n;
         rho0 = c * pow(tan(M_PI_4 + .5 * phi0), -n);
     } else {

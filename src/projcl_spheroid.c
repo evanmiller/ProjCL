@@ -57,7 +57,7 @@ PLSpheroidInfo _pl_get_spheroid_info(PLSpheroid pl_ell) {
 	info.one_ecc2 = (info.minor_axis * info.minor_axis) / (info.major_axis * info.major_axis);
 	info.ecc2 = 1. - info.one_ecc2;
 	info.ecc = sqrt(info.ecc2);
-	info.ec = 1. - .5 * info.one_ecc2 * log((1. - info.ecc) / (1. + info.ecc)) / info.ecc;
+	info.ec = 1. - .5 * info.one_ecc2 * (log1p(-info.ecc) - log1p(info.ecc)) / info.ecc;
 	
 	double t, es = info.ecc2;
 	info.en[0] = C00 - es * (C02 + es * (C04 + es * (C06 + es * C08)));

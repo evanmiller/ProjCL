@@ -56,6 +56,6 @@ void pl_params_set_mercator_params_from_pathological_lambert_conformal_conic_par
 
     dst->scale = src->scale*cosphi1;
     dst->x0 = src->x0 - src->scale*info.major_axis*cosphi1*src->lon0*DEG_TO_RAD;
-    dst->y0 = src->y0 - src->scale*info.major_axis*cosphi1*log(tan(0.5*src->lat0*DEG_TO_RAD+M_PI_4));
+    dst->y0 = src->y0 - src->scale*info.major_axis*cosphi1*asinh(tan(src->lat0*DEG_TO_RAD));
     dst->spheroid = src->spheroid;
 }

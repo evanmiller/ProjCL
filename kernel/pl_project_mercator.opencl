@@ -11,10 +11,9 @@ __kernel void pl_project_mercator_s(
 	float8 phi    = radians(xy_in[i].odd);
 	
 	float8 x, y;
-    float8 tanphi2 = tan(.5f*phi);
 	
 	x = lambda;
-	y = log1p(tanphi2) - log1p(-tanphi2);
+	y = asinh(tan(phi));
 
 	xy_out[i].even = x0 + scale * x;
 	xy_out[i].odd  = y0 + scale * y;
@@ -34,7 +33,7 @@ __kernel void pl_unproject_mercator_s(
 	
 	float8 lambda, phi;
 	
-	phi = M_PI_2F - 2.f * atan(exp(-y));
+	phi = asin(tanh(y));
 	lambda = x;
 
 	xy_out[i].even = degrees(lambda);
@@ -59,10 +58,9 @@ __kernel void pl_project_mercator_e(
 	
 	float8 x, y;
     float8 esinphi = ecc * sin(phi);
-    float8 tanphi2 = tan(.5f*phi);
 	
 	x = lambda;
-	y = log1p(tanphi2) - log1p(-tanphi2) + .5f * ecc * (log1p(-esinphi) - log1p(esinphi));
+	y = asinh(tan(phi)) + .5f * ecc * (log1p(-esinphi) - log1p(esinphi));
 	
 	xy_out[i].even = x0 + scale * x;
 	xy_out[i].odd  = y0 + scale * y;
