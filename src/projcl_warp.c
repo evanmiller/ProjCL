@@ -12,6 +12,7 @@
 #include "projcl_run.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 void pl_swap_grid_buffers(PLPointGridBuffer *grid);
 
@@ -283,238 +284,45 @@ cleanup:
     return error;
 }
 
-cl_int pl_project_grid_albers_equal_area(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                         PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
-                                         float rlat1, float rlat2) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "albers_equal_area", 1, pl_ell);
+static cl_int _pl_project_grid(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
+        PLPointGridBuffer *src, PLPointGridBuffer *dst, int fwd) {
+    const char *name = _pl_proj_name(proj);
+    cl_kernel kernel = NULL;
+    cl_int error = CL_SUCCESS;
+
+    if (name == NULL)
+        return CL_INVALID_KERNEL_NAME;
+
+    if (proj == PL_PROJECT_LAMBERT_CONFORMAL_CONIC && fabs((params->rlat1 + params->rlat2) * DEG_TO_RAD) < 1.e-7) {
+        /* With symmetrical standard parallels the LCC equations break down.
+         * But, in this case it reduces to a Mercator projection with an appropriate shift. */
+        PLProjectionParams *params2 = pl_params_init();
+        pl_params_set_mercator_params_from_pathological_lambert_conformal_conic_params(params2, params);
+
+        error = _pl_project_grid(pl_ctx, PL_PROJECT_MERCATOR, params2, src, dst, fwd);
+
+        pl_params_free(params2);
+        return error;
+    }
+
+    kernel = _pl_find_projection_kernel(pl_ctx, name, fwd, params->spheroid);
     if (kernel == NULL) {
         return CL_INVALID_KERNEL_NAME;
     }
     
-    cl_int retval = pl_enqueue_kernel_albers_equal_area(kernel, pl_ctx, src->grid, dst->grid,
-                                               src->width * src->height,
-                                               pl_ell, scale, x0, y0, lon0, lat0, rlat1, rlat2);
-    return retval;
+    error = pl_enqueue_projection_kernel_grid(pl_ctx, kernel, proj, params, src, dst);
+
+    return error;
 }
 
-cl_int pl_unproject_grid_albers_equal_area(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                           PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
-                                           float rlat1, float rlat2) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "albers_equal_area", 0, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_albers_equal_area(kernel, pl_ctx, src->grid, dst->grid,
-                                                        src->width * src->height,
-                                                        pl_ell, scale, x0, y0, lon0, lat0, rlat1, rlat2);
-    return retval;
+cl_int pl_project_grid_forward(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
+        PLPointGridBuffer *src, PLPointGridBuffer *dst) {
+    return _pl_project_grid(pl_ctx, proj, params, src, dst, 1);
 }
 
-cl_int pl_project_grid_american_polyconic(PLContext *pl_ctx, PLPointGridBuffer *src,PLPointGridBuffer *dst, 
-                                     PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "american_polyconic", 1, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_american_polyconic(kernel, pl_ctx, src->grid, dst->grid,
-                                                         src->width * src->height, pl_ell,
-                                                         scale, x0, y0, lon0, lat0);
-    return retval;
-}
-
-cl_int pl_unproject_grid_american_polyconic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                       PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "american_polyconic", 0, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_american_polyconic(kernel, pl_ctx, src->grid, dst->grid,
-                                                         src->width * src->height, pl_ell,
-                                                         scale, x0, y0, lon0, lat0);
-    return retval;
-}
-
-cl_int pl_project_grid_lambert_azimuthal_equal_area(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                               PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "lambert_azimuthal_equal_area", 1, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_lambert_azimuthal_equal_area(kernel, pl_ctx, src->grid, dst->grid,
-                                                                   src->width * src->height,
-                                                                   pl_ell, scale, x0, y0, lon0, lat0);
-    return retval;
-}
-
-cl_int pl_unproject_grid_lambert_azimuthal_equal_area(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                                 PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "lambert_azimuthal_equal_area", 0, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_lambert_azimuthal_equal_area(kernel, pl_ctx, src->grid, dst->grid,
-                                                                   src->width * src->height,
-                                                                   pl_ell, scale, x0, y0, lon0, lat0);
-    return retval;
-}
-
-cl_int pl_project_grid_lambert_conformal_conic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                          PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
-                                          float rlat1, float rlat2) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "lambert_conformal_conic", 1, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_lambert_conformal_conic(kernel, pl_ctx, src->grid, dst->grid,
-                                                              src->width * src->height, 
-                                                              pl_ell, scale, x0, y0, lon0, lat0, rlat1, rlat2);
-    return retval;
-}
-
-cl_int pl_unproject_grid_lambert_conformal_conic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                            PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
-                                            float rlat1, float rlat2) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "lambert_conformal_conic", 0, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_lambert_conformal_conic(kernel, pl_ctx, src->grid, dst->grid,
-                                                              src->width * src->height, 
-                                                              pl_ell, scale, x0, y0, lon0, lat0, rlat1, rlat2);
-    return retval;
-}
-
-cl_int pl_project_grid_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-						   PLSpheroid pl_ell, float scale, float x0, float y0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "mercator", 1, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_mercator(kernel, pl_ctx, src->grid, dst->grid,
-                                               src->width * src->height, 
-                                               pl_ell, scale, x0, y0);
-    return retval;
-}
-
-cl_int pl_unproject_grid_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-							 PLSpheroid pl_ell, float scale, float x0, float y0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "mercator", 0, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_mercator(kernel, pl_ctx, src->grid, dst->grid,
-                                               src->width * src->height, 
-                                               pl_ell, scale, x0, y0);
-    return retval;
-}
-
-cl_int pl_project_grid_oblique_stereographic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "oblique_stereographic", 1, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    return pl_enqueue_kernel_oblique_stereographic(kernel, pl_ctx, src->grid, dst->grid,
-            src->width * src->height, pl_ell, scale, x0, y0, lon0, lat0);
-}
-
-cl_int pl_unproject_grid_oblique_stereographic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "oblique_stereographic", 0, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    return pl_enqueue_kernel_oblique_stereographic(kernel, pl_ctx, src->grid, dst->grid,
-            src->width * src->height, pl_ell, scale, x0, y0, lon0, lat0);
-}
-
-cl_int pl_project_grid_robinson(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-        float scale, float x0, float y0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "robinson", 1, PL_SPHEROID_SPHERE);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-
-    cl_int retval = pl_enqueue_kernel_robinson(kernel, pl_ctx, src->grid, dst->grid,
-                                               src->width * src->height,
-                                               scale, x0, y0);
-    return retval;
-}
-
-cl_int pl_unproject_grid_robinson(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-        float scale, float x0, float y0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "robinson", 0, PL_SPHEROID_SPHERE);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_robinson(kernel, pl_ctx, src->grid, dst->grid,
-                                               src->width * src->height,
-                                               scale, x0, y0);
-    return retval;
-}
-
-cl_int pl_project_grid_transverse_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                      PLSpheroid pl_ell, float scale, float x0, float y0, float lon0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "transverse_mercator", 1, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_transverse_mercator(kernel, pl_ctx, src->grid, dst->grid,
-                                                          src->width * src->height,
-                                                          pl_ell, scale, x0, y0, lon0);
-    return retval;
-}
-
-cl_int pl_unproject_grid_transverse_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "transverse_mercator", 0, pl_ell);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_transverse_mercator(kernel, pl_ctx, src->grid, dst->grid,
-                                                          src->width * src->height,
-                                                          pl_ell, scale, x0, y0, lon0);
-    return retval;
-}
-
-cl_int pl_project_grid_winkel_tripel(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                float scale, float x0, float y0, float lon0, float rlat1) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "winkel_tripel", 1, PL_SPHEROID_SPHERE);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_winkel_tripel(kernel, pl_ctx, src->grid, dst->grid,
-                                                    src->width * src->height, 
-                                                    scale, x0, y0, lon0, rlat1);
-    return retval;
-}
-
-cl_int pl_unproject_grid_winkel_tripel(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                  float scale, float x0, float y0, float lon0, float rlat1) {
-    cl_kernel kernel = _pl_find_projection_kernel(pl_ctx, "winkel_tripel", 0, PL_SPHEROID_SPHERE);
-    if (kernel == NULL) {
-        return CL_INVALID_KERNEL_NAME;
-    }
-    
-    cl_int retval = pl_enqueue_kernel_winkel_tripel(kernel, pl_ctx, src->grid, dst->grid,
-                                                    src->width * src->height, 
-                                                    scale, x0, y0, lon0, rlat1);
-    return retval;
+cl_int pl_project_grid_reverse(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
+        PLPointGridBuffer *src, PLPointGridBuffer *dst) {
+    return _pl_project_grid(pl_ctx, proj, params, src, dst, 0);
 }
 
 cl_int pl_sample_image(PLContext *pl_ctx, PLPointGridBuffer *grid, PLImageBuffer *buf, PLImageFilter filter,

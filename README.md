@@ -98,14 +98,19 @@ PLProjectionBuffer *proj_buffer = pl_load_projection_data(ctx, lat_lon_data, cou
 /* allocate output buffer */
 float *xy_data = malloc(2 * count * sizeof(float));
 
+/* Set some params */
+PLProjectionParams *params = pl_params_init();
+pl_params_set_scale(1.0);
+pl_params_set_spheroid(PL_SPHEROID_WGS_84);
+pl_params_set_false_northing(0.0);
+pl_params_set_false_easting(0.0);
+
 /* project forwards */
-error = pl_project_mercator(ctx, proj_buffer, xy_data, PL_SPHEROID_WGS_84, 
-        1.0,  /* scale */
-        0.0,  /* false northing */
-        0.0); /* false easting */
+error = pl_project_points_forward(ctx, PL_PROJECT_MERCATOR, params, proj_buffer, xy_data);
 
 /* unload */
 pl_unload_projection_data(proj_buffer);
+pl_params_free(params);
 ```
 
 Inverse projection
@@ -121,8 +126,13 @@ PLProjectionBuffer *cartesian_buffer = pl_load_projection_data(ctx, xy_data, cou
 
 float *lat_lon_data = malloc(2 * count * sizeof(float));
 
-error = pl_unproject_mercator(ctx, cartesian_buffer, lat_lon_data, PL_SPHEROID_WGS_84,
-        1.0, 0.0, 0.0);
+PLProjectionParams *params = pl_params_init();
+pl_params_set_scale(1.0);
+pl_params_set_spheroid(PL_SPHEROID_WGS_84);
+pl_params_set_false_northing(0.0);
+pl_params_set_false_easting(0.0);
+
+error = pl_project_points_reverse(ctx, PL_PROJECT_MERCATOR, params, cartesian_buffer, lat_lon_data);
 
 pl_unload_projection_data(cartesian_buffer);
 ```

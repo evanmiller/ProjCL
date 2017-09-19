@@ -27,12 +27,6 @@ typedef struct PLImageArrayBuffer_s {
     size_t      tiles_down;
 } PLImageArrayBuffer;
 
-typedef struct PLPointGridBuffer_s {
-    cl_mem      grid;
-    size_t      width;
-    size_t      height;
-} PLPointGridBuffer;
-
 PLImageBuffer *pl_load_image(PLContext *pl_ctx, 
                              int channel_order,
                              int channel_type,
@@ -70,43 +64,8 @@ void pl_unload_grid(PLPointGridBuffer *grid);
 cl_int pl_transform_grid(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, float sx, float sy, float tx, float ty);
 cl_int pl_shift_grid_datum(PLContext *pl_ctx, PLPointGridBuffer *src, PLDatum src_datum, PLSpheroid src_spheroid,
                            PLPointGridBuffer *dst, PLDatum dst_datum, PLSpheroid dst_spheroid);
-cl_int pl_project_grid_albers_equal_area(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                         PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
-                                         float rlat1, float rlat2);
-cl_int pl_unproject_grid_albers_equal_area(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                           PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
-                                           float rlat1, float rlat2);
-cl_int pl_project_grid_american_polyconic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                          PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_unproject_grid_american_polyconic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                            PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_project_grid_lambert_azimuthal_equal_area(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                                    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_unproject_grid_lambert_azimuthal_equal_area(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                                      PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_project_grid_lambert_conformal_conic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                               PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
-                                               float rlat1, float rlat2);
-cl_int pl_unproject_grid_lambert_conformal_conic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                                 PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0,
-                                                 float rlat1, float rlat2);
-cl_int pl_project_grid_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                PLSpheroid pl_ell, float scale, float x0, float y0);
-cl_int pl_unproject_grid_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                  PLSpheroid pl_ell, float scale, float x0, float y0);
-cl_int pl_project_grid_oblique_stereographic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_unproject_grid_oblique_stereographic(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-        PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_project_grid_robinson(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-        float scale, float x0, float y0);
-cl_int pl_unproject_grid_robinson(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-        float scale, float x0, float y0);
-cl_int pl_project_grid_transverse_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-                                           PLSpheroid pl_ell, float scale, float x0, float y0, float lon0);
-cl_int pl_unproject_grid_transverse_mercator(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                             PLSpheroid pl_ell, float scale, float x0, float y0, float lon0);
-cl_int pl_project_grid_winkel_tripel(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                     float scale, float x0, float y0, float lon0, float rlat1);
-cl_int pl_unproject_grid_winkel_tripel(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, 
-                                       float scale, float x0, float y0, float lon0, float rlat1);
+
+cl_int pl_project_grid_forward(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
+        PLPointGridBuffer *src, PLPointGridBuffer *dst);
+cl_int pl_project_grid_reverse(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
+        PLPointGridBuffer *src, PLPointGridBuffer *dst);

@@ -55,6 +55,18 @@ typedef enum PLSpheroid {
     PL_SPHEROID_INTERNATIONAL_1924
 } PLSpheroid;
 
+typedef enum PLProjection_e {
+    PL_PROJECT_ALBERS_EQUAL_AREA,
+    PL_PROJECT_AMERICAN_POLYCONIC,
+    PL_PROJECT_LAMBERT_CONFORMAL_CONIC,
+    PL_PROJECT_LAMBERT_AZIMUTHAL_EQUAL_AREA,
+    PL_PROJECT_MERCATOR,
+    PL_PROJECT_OBLIQUE_STEREOGRAPHIC,
+    PL_PROJECT_ROBINSON,
+    PL_PROJECT_TRANSVERSE_MERCATOR,
+    PL_PROJECT_WINKEL_TRIPEL
+} PLProjection;
+
 struct pl_spheroid_info_s {
     double major_axis;
     double minor_axis;
@@ -111,6 +123,24 @@ typedef struct PLProjectionBuffer_s {
 	cl_mem      xy_out;
 	cl_uint	    count;
 } PLProjectionBuffer;
+
+typedef struct PLProjectionParams_s {
+    double scale;
+    double x0;
+    double y0;
+    double lon0;
+    double lat0;
+    double rlat1;
+    double rlat2;
+
+    PLSpheroid spheroid;
+} PLProjectionParams;
+
+typedef struct PLPointGridBuffer_s {
+    cl_mem      grid;
+    size_t      width;
+    size_t      height;
+} PLPointGridBuffer;
 
 typedef struct PLDatumShiftBuffer_s {
     cl_mem      x_rw;

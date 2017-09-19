@@ -40,42 +40,25 @@ cl_int pl_shift_datum(PLContext *pl_ctx, PLDatum src_datum, PLDatum dst_datum, P
 PLProjectionBuffer *pl_load_projection_data(PLContext *pl_ctx, const float *xy, int n, int copy, int *outError);
 void pl_unload_projection_data(PLProjectionBuffer *pl_buf);
 
-cl_int pl_project_albers_equal_area(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0, float rlat1, float rlat2);
-cl_int pl_unproject_albers_equal_area(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0, float rlat1, float rlat2);
-cl_int pl_project_american_polyconic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_unproject_american_polyconic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_project_lambert_azimuthal_equal_area(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_unproject_lambert_azimuthal_equal_area(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_project_lambert_conformal_conic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0, float rlat1, float rlat2);
-cl_int pl_unproject_lambert_conformal_conic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0, float rlat1, float rlat2);
-cl_int pl_project_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0);
-cl_int pl_unproject_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0);
-cl_int pl_project_oblique_stereographic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_unproject_oblique_stereographic(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0, float lat0);
-cl_int pl_project_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-        float scale, float x0, float y0);
-cl_int pl_unproject_robinson(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-        float scale, float x0, float y0);
-cl_int pl_project_transverse_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out, 
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0);
-cl_int pl_unproject_transverse_mercator(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out, 
-    PLSpheroid pl_ell, float scale, float x0, float y0, float lon0);
-cl_int pl_project_winkel_tripel(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    float scale, float x0, float y0, float lon0, float rlat1);
-cl_int pl_unproject_winkel_tripel(PLContext *pl_ctx, PLProjectionBuffer *pl_buf, float *xy_out,
-    float scale, float x0, float y0, float lon0, float rlat1);
+
+PLProjectionParams *pl_params_init();
+void pl_params_free(PLProjectionParams *params);
+void pl_params_set_scale(PLProjectionParams *params, double k0);
+void pl_params_set_spheroid(PLProjectionParams *params, PLSpheroid spheroid);
+void pl_params_set_false_easting(PLProjectionParams *params, double x0);
+void pl_params_set_false_northing(PLProjectionParams *params, double y0);
+void pl_params_set_latitude_of_origin(PLProjectionParams *params, double lat0);
+void pl_params_set_longitude_of_origin(PLProjectionParams *params, double lon0);
+void pl_params_set_standard_parallel(PLProjectionParams *params, double rlat1);
+void pl_params_set_standard_parallels(PLProjectionParams *params, double rlat1, double rlat2);
+void pl_params_set_mercator_params_from_pathological_lambert_conformal_conic_params(
+        PLProjectionParams *dst, PLProjectionParams *src);
+
+
+cl_int pl_project_points_forward(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
+        PLProjectionBuffer *pl_buf, float *xy_out);
+cl_int pl_project_points_reverse(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
+        PLProjectionBuffer *pl_buf, float *xy_out);
 
 
 PLForwardGeodesicFixedDistanceBuffer *pl_load_forward_geodesic_fixed_distance_data(PLContext *pl_ctx,

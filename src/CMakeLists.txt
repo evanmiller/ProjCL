@@ -10,6 +10,7 @@ set(PROJCL_H
 set(PROJCL_C
   projcl_datum.c
   projcl_geodesic.c
+  projcl_params.c
   projcl_project.c
   projcl_run.c
   projcl_run.h

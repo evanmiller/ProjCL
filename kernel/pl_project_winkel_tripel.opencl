@@ -24,7 +24,7 @@ __kernel void pl_project_winkel_tripel_s(
     float8 x, y, lambda2, sinD, d;
     
     float8 cosPhi, sinPhi, cosLambda2, sinLambda2;
-    
+
     lambda2 = .5f * lambda;
     sinPhi = sincos(phi, &cosPhi);
     sinLambda2 = sincos(lambda2, &cosLambda2);

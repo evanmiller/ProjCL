@@ -24,8 +24,7 @@
 #endif
 
 #define TEST_POINTS 200000
-#define TOL 1.e-5
-#define DEGREES_TOL 2.5/3600. // two and a half arcseconds
+#define DEGREES_TOL 2.5/3600. // two and a half arcseconds (about 60m at the equator)
 #define METERS_TOL 11.0      // eleven meters
 
 #define MIN_LAT -40.0 // shifted up for benefit of conic projections
@@ -43,217 +42,272 @@ typedef struct test_params_s {
   double rlat2;
 } test_params_t;
 
-static test_params_t albers_equal_area_tests[] = { 
-  { .name = "Spherical, centered", 
-    .ell = PL_SPHEROID_SPHERE, 
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = 30.0,
-    .rlat2 = 60.0 },
-  { .name = "Spherical, off-center",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 10.0,
-    .lat0 = 10.0,
-    .rlat1 = 30.0,
-    .rlat2 = 60.0 },
-  { .name = "Ellipsoidal, centered",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = 30.0,
-    .rlat2 = 60.0 },
-  { .name = "Ellipsoidal, off-center",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 10.0,
-    .lat0 = 10.0,
-    .rlat1 = 30.0,
-    .rlat2 = 60.0 }
-};
+typedef struct test_group_s {
+    char            label[80];
+    PLProjection    proj;
+    char            proj4_name[80];
+    test_params_t   tests[10];
+} test_group_t;
 
-static test_params_t american_polyconic_tests[] = {
-  { .name = "Spherical, centered",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Spherical, off-center",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 10.0,
-    .lat0 = 10.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Ellipsoidal, centered",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Ellipsoidal, off-center",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 10.0,
-    .lat0 = 10.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN }
-};
+test_group_t _test_groups[] = {
+    {
+        .label = "Albers Equal Area",
+        .proj4_name = "aea",
+        .proj = PL_PROJECT_ALBERS_EQUAL_AREA,
+        .tests = {
+            { .name = "Spherical, centered", 
+                .ell = PL_SPHEROID_SPHERE, 
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = 30.0,
+                .rlat2 = 60.0 },
 
-static test_params_t lambert_azimuthal_equal_area_tests[] = {
-  { .name = "Spherical, centered",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Spherical, off-center",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 10.0,
-    .lat0 = 10.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Ellipsoidal, centered",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Ellipsoidal, off-center",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 10.0,
-    .lat0 = 10.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN }
-};
+            { .name = "Spherical, off-center",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 10.0,
+                .lat0 = 10.0,
+                .rlat1 = 30.0,
+                .rlat2 = 60.0 },
 
-static test_params_t lambert_conformal_conic_tests[] = {
-  { .name = "Spherical, centered",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = 30.0,
-    .rlat2 = 60.0 },
-  { .name = "Spherical, off-center",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 10.0,
-    .lat0 = 10.0,
-    .rlat1 = 30.0,
-    .rlat2 = 60.0 },
+            { .name = "Ellipsoidal, centered",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = 30.0,
+                .rlat2 = 60.0 },
+
+            { .name = "Ellipsoidal, off-center",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 10.0,
+                .lat0 = 10.0,
+                .rlat1 = 30.0,
+                .rlat2 = 60.0 }
+        }
+    },
+    {
+        .label = "American Polyconic",
+        .proj4_name = "poly",
+        .proj = PL_PROJECT_AMERICAN_POLYCONIC,
+        .tests = {
+            { .name = "Spherical, centered",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN },
+            { .name = "Spherical, off-center",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 10.0,
+                .lat0 = 10.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN },
+            { .name = "Ellipsoidal, centered",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN },
+            { .name = "Ellipsoidal, off-center",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 10.0,
+                .lat0 = 10.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN }
+        }
+    },
+    {
+        .label = "Lambert Azimuthal Equal Area",
+        .proj4_name = "laea",
+        .proj = PL_PROJECT_LAMBERT_AZIMUTHAL_EQUAL_AREA,
+        .tests = {
+            { .name = "Spherical, centered",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN },
+            { .name = "Spherical, off-center",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 10.0,
+                .lat0 = 10.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN },
+            { .name = "Ellipsoidal, centered",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN },
+            { .name = "Ellipsoidal, off-center",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 10.0,
+                .lat0 = 10.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN }
+        }
+    },
+    {
+        .label = "Lambert Conformal Conic",
+        .proj = PL_PROJECT_LAMBERT_CONFORMAL_CONIC,
+        .proj4_name = "lcc",
+        .tests = {
+            { .name = "Spherical, centered",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = 30.0,
+                .rlat2 = 60.0 },
+            { .name = "Spherical, off-center",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 10.0,
+                .lat0 = 10.0,
+                .rlat1 = 30.0,
+                .rlat2 = 60.0 },
 #ifndef HAVE_PROJ4
-  { .name = "Spherical, symmetric standard parallels",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = -30.0,
-    .rlat2 = 30.0 },
+            { .name = "Spherical, symmetric standard parallels",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = -30.0,
+                .rlat2 = 30.0 },
 #endif
-  { .name = "Ellipsoidal, centered",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = 30.0,
-    .rlat2 = 60.0 },
-  { .name = "Ellipsoidal, off-center",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 10.0,
-    .lat0 = 10.0,
-    .rlat1 = 30.0,
-    .rlat2 = 60.0 },
+            { .name = "Ellipsoidal, centered",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = 30.0,
+                .rlat2 = 60.0 },
+            { .name = "Ellipsoidal, off-center",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 10.0,
+                .lat0 = 10.0,
+                .rlat1 = 30.0,
+                .rlat2 = 60.0 },
 #ifndef HAVE_PROJ4
-  { .name = "Ellipsoidal, symmetric standard parallels",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = -30.0,
-    .rlat2 = 30.0 },
+            { .name = "Ellipsoidal, symmetric standard parallels",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = -30.0,
+                .rlat2 = 30.0 },
 #endif
-};
-
-static test_params_t mercator_tests[] = {
-  { .name = "Spherical",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = NAN,
-    .lat0 = NAN,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Ellipsoidal",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = NAN,
-    .lat0 = NAN,
-    .rlat1 = NAN,
-    .rlat2 = NAN }
-};
-
-static test_params_t oblique_stereographic_tests[] = {
-  { .name = "Ellipsoidal, centered",
-      .ell = PL_SPHEROID_WGS_84,
-      .lon0 = 0.0,
-      .lat0 = 0.0,
-      .rlat1 = NAN,
-      .rlat2 = NAN
-  },
-  { .name = "Ellipsoidal, off-center",
-      .ell = PL_SPHEROID_WGS_84,
-      .lon0 = 10.0,
-      .lat0 = 10.0,
-      .rlat1 = NAN,
-      .rlat2 = NAN
-  }
-};
-
-static test_params_t robinson_tests[] = {
-  { .name = "Spherical",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = NAN,
-    .lat0 = NAN,
-    .rlat1 = NAN,
-    .rlat2 = NAN }
-};
-
-static test_params_t transverse_mercator_tests[] = {
-  { .name = "Spherical, centered",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Spherical, off-center",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 10.0,
-    .lat0 = 0.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Ellipsoidal, centered",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 0.0,
-    .lat0 = 0.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Ellipsoidal, off-center",
-    .ell = PL_SPHEROID_WGS_84,
-    .lon0 = 10.0,
-    .lat0 = 0.0,
-    .rlat1 = NAN,
-    .rlat2 = NAN }
-};
-
-static test_params_t winkel_tripel_tests[] = {
-  { .name = "Centered",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 0.0,
-    .lat0 = NAN,
-    .rlat1 = NAN,
-    .rlat2 = NAN },
-  { .name = "Off-center",
-    .ell = PL_SPHEROID_SPHERE,
-    .lon0 = 10.0,
-    .lat0 = NAN,
-    .rlat1 = NAN,
-    .rlat2 = NAN }
+        },
+    },
+    {
+        .label = "Mercator",
+        .proj = PL_PROJECT_MERCATOR,
+        .proj4_name = "merc",
+        .tests = {
+            { .name = "Spherical",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = NAN,
+                .lat0 = NAN,
+                .rlat1 = NAN,
+                .rlat2 = NAN },
+            { .name = "Ellipsoidal",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = NAN,
+                .lat0 = NAN,
+                .rlat1 = NAN,
+                .rlat2 = NAN }
+        }
+    },
+    {
+        .label = "Oblique Stereographic",
+        .proj = PL_PROJECT_OBLIQUE_STEREOGRAPHIC,
+        .proj4_name = "sterea",
+        .tests = {
+            { .name = "Ellipsoidal, centered",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN
+            },
+            { .name = "Ellipsoidal, off-center",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 10.0,
+                .lat0 = 10.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN
+            }
+        }
+    },
+    {
+        .label = "Robinson",
+        .proj = PL_PROJECT_ROBINSON,
+        .proj4_name = "robin",
+        .tests = {
+            { .name = "Spherical",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = NAN,
+                .lat0 = NAN,
+                .rlat1 = NAN,
+                .rlat2 = NAN }
+        }
+    },
+    {
+        .label = "Transverse Mercator",
+        .proj = PL_PROJECT_TRANSVERSE_MERCATOR,
+        .proj4_name = "tmerc",
+        .tests = {
+            { .name = "Spherical, centered",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN },
+            { .name = "Spherical, off-center",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 10.0,
+                .lat0 = 0.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN },
+        }
+    },
+    {
+        .label = "Transverse Mercator (Extended)",
+        .proj = PL_PROJECT_TRANSVERSE_MERCATOR,
+        .proj4_name = "etmerc",
+        .tests = {
+            { .name = "Ellipsoidal, centered",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN },
+            { .name = "Ellipsoidal, off-center",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 10.0,
+                .lat0 = 0.0,
+                .rlat1 = NAN,
+                .rlat2 = NAN }
+        }
+    },
+    {
+        .label = "Winkel Tripel",
+        .proj = PL_PROJECT_WINKEL_TRIPEL,
+        .proj4_name = "wintri",
+        .tests = {
+            { .name = "Centered",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 0.0,
+                .lat0 = NAN,
+                .rlat1 = NAN,
+                .rlat2 = NAN },
+            { .name = "Off-center",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 10.0,
+                .lat0 = NAN,
+                .rlat1 = NAN,
+                .rlat2 = NAN }
+        }
+    }
 };
 
 int compile_module(PLContext *ctx, unsigned int module, char *name);
 int compare_points(const float *points1, const float *points2, const float *ref_points,
         int count, char *name, double tolerance, double speedup);
-uint64_t test_albers_equal_area(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 uint64_t test_american_polyconic(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 uint64_t test_lambert_azimuthal_equal_area(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 uint64_t test_lambert_conformal_conic(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
@@ -262,6 +316,7 @@ uint64_t test_oblique_stereographic(PLContext *ctx, PLProjectionBuffer *orig_buf
 uint64_t test_robinson(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 uint64_t test_transverse_mercator(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 uint64_t test_winkel_tripel(PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
+uint64_t run_test_group(test_group_t *group, PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points);
 
 int compare_points(const float *points1, const float *points2, const float *ref_points, int count,
         char *name, double tolerance, double speedup) {
@@ -389,32 +444,13 @@ int main(int argc, char **argv) {
 
     uint64_t test_failures = 0;
 
-    printf("\nTesting consistency of Albers Equal Area\n");
-    test_failures += test_albers_equal_area(ctx, orig_buf, orig_points);
+    int g;
+    for (g=0; g<sizeof(_test_groups)/sizeof(_test_groups[0]); g++) {
+        test_group_t *group = &_test_groups[g];
+        printf("\nTesting consistency of %s\n", group->label);
 
-    printf("\nTesting consistency of American Polyconic\n");
-    test_failures += test_american_polyconic(ctx, orig_buf, orig_points);
-
-    printf("\nTesting consistency of Lambert Azimuthal Equal Area\n");
-    test_failures += test_lambert_azimuthal_equal_area(ctx, orig_buf, orig_points);
-
-    printf("\nTesting consistency of Lambert Conformal Conic\n");
-    test_failures += test_lambert_conformal_conic(ctx, orig_buf, orig_points);
-
-    printf("\nTesting consistency of Mercator\n");
-    test_failures += test_mercator(ctx, orig_buf, orig_points);
-
-    printf("\nTesting consistency of Oblique Stereographic\n");
-    test_failures += test_oblique_stereographic(ctx, orig_buf, orig_points);
-
-    printf("\nTesting consistency of Robinson\n");
-    test_failures += test_robinson(ctx, orig_buf, orig_points);
-
-    printf("\nTesting consistency of Transverse Mercator\n");
-    test_failures += test_transverse_mercator(ctx, orig_buf, orig_points);
-
-    printf("\nTesting consistency of Winkel Tripel\n");
-    test_failures += test_winkel_tripel(ctx, orig_buf, orig_points);
+        test_failures += run_test_group(group, ctx, orig_buf, orig_points);
+    }
 
     printf("\nTotal consistency failures: %" PRId64 "\n", test_failures & 0xFFFFFFFF);
     printf("Total Proj.4 mismatches: %" PRId64 "\n", test_failures >> 32);
@@ -538,27 +574,25 @@ int compare_proj4_fwd(const float *orig_points, const float *proj_points,
     return failures;
 }
 
-int sprintf_proj4(char *buf, const char *name, test_params_t params) {
+int sprintf_proj4(char *buf, const char *name, test_params_t *params) {
     char *p = buf;
     p += sprintf(p, "+proj=%s", name);
-    if (params.ell != -1)
-        p += sprintf(p, " +ellps=%s", params.ell == PL_SPHEROID_SPHERE ? "sphere" : "WGS84");
+    p += sprintf(p, " +ellps=%s", params->ell == PL_SPHEROID_SPHERE ? "sphere" : "WGS84");
     if (strcmp(name, "latlong") != 0) {
-        if (!isnan(params.lat0) && params.lat0 != 0.0)
-            p += sprintf(p, " +lat_0=%.1lf%c", fabs(params.lat0), params.lat0 > 0.0 ? 'n' : 's');
-        if (!isnan(params.lon0) && params.lon0 != 0.0)
-            p += sprintf(p, " +lon_0=%.1lf%c", fabs(params.lon0), params.lon0 > 0.0 ? 'e' : 'w');
-        if (!isnan(params.rlat1))
-            p += sprintf(p, " +lat_1=%.1lf%c", fabs(params.rlat1), params.rlat1 > 0.0 ? 'n' : 's');
-        if (!isnan(params.rlat2))
-            p += sprintf(p, " +lat_2=%.1lf%c", fabs(params.rlat2), params.rlat2 > 0.0 ? 'n' : 's');
+        if (!isnan(params->lat0) && params->lat0 != 0.0)
+            p += sprintf(p, " +lat_0=%.1lf%c", fabs(params->lat0), params->lat0 > 0.0 ? 'n' : 's');
+        if (!isnan(params->lon0) && params->lon0 != 0.0)
+            p += sprintf(p, " +lon_0=%.1lf%c", fabs(params->lon0), params->lon0 > 0.0 ? 'e' : 'w');
+        if (!isnan(params->rlat1))
+            p += sprintf(p, " +lat_1=%.1lf%c", fabs(params->rlat1), params->rlat1 > 0.0 ? 'n' : 's');
+        if (!isnan(params->rlat2))
+            p += sprintf(p, " +lat_2=%.1lf%c", fabs(params->rlat2), params->rlat2 > 0.0 ? 'n' : 's');
     }
 
     return 0;
 }
 
-uint64_t test_albers_equal_area(PLContext *ctx, 
-        PLProjectionBuffer *orig_buf, float *orig_points) {
+uint64_t run_test_group(test_group_t *group, PLContext *ctx, PLProjectionBuffer *orig_buf, float *orig_points) {
     int error = CL_SUCCESS;
     uint64_t consistency_failures = 0, proj4_mismatches = 0;
     PLProjectionBuffer *proj_buf = NULL;
@@ -568,27 +602,44 @@ uint64_t test_albers_equal_area(PLContext *ctx,
     char orig_string[80];
     char proj_string[80];
     double fwd_secs, inv_secs;
+    PLProjectionParams *params = pl_params_init();
 
-    for (i=0; i<sizeof(albers_equal_area_tests)/sizeof(test_params_t); i++) {
-        test_params_t test = albers_equal_area_tests[i];
+    for (i=0; i<10 && group->tests[i].name[0]; i++) {
+        test_params_t *test = &group->tests[i];
 
-        error = pl_project_albers_equal_area(ctx, orig_buf, proj_points, 
-              test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
-        fwd_secs = ctx->last_time;
+        pl_params_set_false_northing(params, 0.0);
+        pl_params_set_false_easting(params, 0.0);
+        pl_params_set_scale(params, 1.0);
+        pl_params_set_spheroid(params, test->ell);
+        pl_params_set_latitude_of_origin(params, test->lat0);
+        pl_params_set_longitude_of_origin(params, test->lon0);
+        pl_params_set_standard_parallels(params, test->rlat1, test->rlat2);
+
+        error = pl_project_points_forward(ctx, group->proj, params, orig_buf, proj_points);
+        if (error == CL_SUCCESS) {
+            fwd_secs = ctx->last_time;
+        } else {
+            printf("** Error Projecting: %d **\n", error);
+            fwd_secs = NAN;
+        }
 
         proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
 
-        error = pl_unproject_albers_equal_area(ctx, proj_buf, orig_points2, 
-                test.ell, 1.0, 0.0, 0.0, test.lon0, test.lat0, test.rlat1, test.rlat2);
-        inv_secs = ctx->last_time;
+        error = pl_project_points_reverse(ctx, group->proj, params, proj_buf, orig_points2);
+        if (error == CL_SUCCESS) {
+            inv_secs = ctx->last_time;
+        } else {
+            printf("** Error Projecting: %d **\n", error);
+            inv_secs = NAN;
+        }
 
         pl_unload_projection_data(proj_buf);
 
         consistency_failures += compare_points(orig_points, orig_points2, proj_points, TEST_POINTS, 
-                test.name, DEGREES_TOL, NAN);
+                test->name, DEGREES_TOL, NAN);
 
         sprintf_proj4(orig_string, "latlong", test);
-        sprintf_proj4(proj_string, "aea", test);
+        sprintf_proj4(proj_string, group->proj4_name, test);
 
         proj4_mismatches += compare_proj4_fwd(orig_points, proj_points,
                 orig_string, proj_string, fwd_secs);
@@ -599,6 +650,7 @@ uint64_t test_albers_equal_area(PLContext *ctx,
     return consistency_failures + (proj4_mismatches << 32);
 }
 
+/*
 uint64_t test_american_polyconic(PLContext *ctx, 
         PLProjectionBuffer *orig_buf, float *orig_points) {
     int error = CL_SUCCESS;
@@ -927,3 +979,4 @@ uint64_t test_winkel_tripel(PLContext *ctx, PLProjectionBuffer *orig_buf, float 
 
     return consistency_failures + (proj4_mismatches << 32);
 }
+*/
