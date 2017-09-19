@@ -239,9 +239,9 @@ need to...
 
 2. Create a pl_enqueue_kernel_&lt;name&gt; function in [src/projcl_run.c](https://github.com/evanmiller/ProjCL/blob/master/src/projcl_run.c)
 
-3. Create pl_project_&lt;name&gt; and pl_unproject_&lt;name&gt; functions in [src/projcl_project.c](https://github.com/evanmiller/ProjCL/blob/master/src/projcl_project.c)
+3. Add an entry to the `PLProjection` enum in [include/projcl/projcl_types.h](https://github.com/evanmiller/ProjCL/blob/master/include/projcl/projcl_types.h)
 
-4. Add pl_project_&lt;name&gt; and pl_unproject_&lt;name&gt; prototypes to [include/projcl/projcl.h](https://github.com/evanmiller/ProjCL/blob/master/include/projcl/projcl.h)
+4. Add an entry to the `_pl_projection_info` array in [src/projcl_run.c](https://github.com/evanmiller/ProjCL/blob/master/src/projcl_run.c)
 
 5. Add tests to [test/projcl_test.c](https://github.com/evanmiller/ProjCL/blob/master/test/projcl_test.c)
 

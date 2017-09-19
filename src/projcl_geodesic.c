@@ -166,20 +166,20 @@ cl_int pl_forward_geodesic_fixed_distance(PLContext *pl_ctx, PLForwardGeodesicFi
 	cl_kernel sincos_kernel = NULL, sincos1_kernel = NULL, fwd_kernel = NULL;
 	
 	if (_pl_spheroid_is_spherical(pl_ell)) {
-		fwd_kernel = _pl_find_kernel(pl_ctx, "pl_forward_geodesic_fixed_distance_s");
+		fwd_kernel = pl_find_kernel(pl_ctx, "pl_forward_geodesic_fixed_distance_s");
 	} else {
-		fwd_kernel = _pl_find_kernel(pl_ctx, "pl_forward_geodesic_fixed_distance_e");
+		fwd_kernel = pl_find_kernel(pl_ctx, "pl_forward_geodesic_fixed_distance_e");
 	}
 	if (fwd_kernel == NULL) {
 		return CL_INVALID_KERNEL_NAME;
 	}
 	
-	sincos_kernel = _pl_find_kernel(pl_ctx, "pl_sincos");
+	sincos_kernel = pl_find_kernel(pl_ctx, "pl_sincos");
 	if (sincos_kernel == NULL) {
 		return CL_INVALID_KERNEL_NAME;
 	}
 	
-	sincos1_kernel = _pl_find_kernel(pl_ctx, "pl_sincos1");
+	sincos1_kernel = pl_find_kernel(pl_ctx, "pl_sincos1");
 	if (sincos_kernel == NULL) {
 		return CL_INVALID_KERNEL_NAME;
 	}
@@ -222,9 +222,9 @@ int pl_forward_geodesic_fixed_angle(PLContext *pl_ctx,
     PLSpheroid pl_ell, float angle) {
     cl_kernel fwd_kernel = NULL;
     if (_pl_spheroid_is_spherical(pl_ell)) {
-        fwd_kernel = _pl_find_kernel(pl_ctx, "pl_forward_geodesic_fixed_angle_s");
+        fwd_kernel = pl_find_kernel(pl_ctx, "pl_forward_geodesic_fixed_angle_s");
     } else {
-        fwd_kernel = _pl_find_kernel(pl_ctx, "pl_forward_geodesic_fixed_angle_e");
+        fwd_kernel = pl_find_kernel(pl_ctx, "pl_forward_geodesic_fixed_angle_e");
     }
     if (fwd_kernel == NULL) {
         return CL_INVALID_KERNEL_NAME;
@@ -310,9 +310,9 @@ cl_int pl_inverse_geodesic(PLContext *pl_ctx, PLInverseGeodesicBuffer *pl_buf, f
 	cl_kernel inv_kernel = NULL;
 	
 	if (_pl_spheroid_is_spherical(pl_ell)) {
-		inv_kernel = _pl_find_kernel(pl_ctx, "pl_inverse_geodesic_s");
+		inv_kernel = pl_find_kernel(pl_ctx, "pl_inverse_geodesic_s");
 	} else {
-		inv_kernel = _pl_find_kernel(pl_ctx, "pl_inverse_geodesic_e");
+		inv_kernel = pl_find_kernel(pl_ctx, "pl_inverse_geodesic_e");
 	}
 	if (inv_kernel == NULL) {
 		return CL_INVALID_KERNEL_NAME;

@@ -93,12 +93,8 @@ void pl_unload_projection_data(PLProjectionBuffer *pl_buf) {
 static cl_int _pl_project(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
         PLProjectionBuffer *pl_buf, float *xy_out, int fwd) {
     struct timeval start_time, end_time;
-    const char *name = _pl_proj_name(proj);
     cl_kernel kernel = NULL;
     cl_int error = CL_SUCCESS;
-
-    if (name == NULL)
-        return CL_INVALID_KERNEL_NAME;
 
     if (proj == PL_PROJECT_LAMBERT_CONFORMAL_CONIC && fabs((params->rlat1 + params->rlat2) * DEG_TO_RAD) < 1.e-7) {
         /* With symmetrical standard parallels the LCC equations break down.
@@ -112,7 +108,7 @@ static cl_int _pl_project(PLContext *pl_ctx, PLProjection proj, PLProjectionPara
         return error;
     }
 
-	kernel = _pl_find_projection_kernel(pl_ctx, name, fwd, params->spheroid);
+	kernel = pl_find_projection_kernel(pl_ctx, proj, fwd, params->spheroid);
     if (kernel == NULL)
         return CL_INVALID_KERNEL_NAME;
 

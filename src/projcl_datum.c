@@ -51,7 +51,7 @@ PLDatumShiftBuffer *pl_load_datum_shift_data(PLContext *pl_ctx, PLSpheroid src_s
         goto cleanup;
     }
     
-    cl_kernel cartesian_kernel = _pl_find_kernel(pl_ctx, "pl_geodesic_to_cartesian");
+    cl_kernel cartesian_kernel = pl_find_kernel(pl_ctx, "pl_geodesic_to_cartesian");
     if (cartesian_kernel == NULL) {
         error = CL_INVALID_KERNEL_NAME;
         goto cleanup;
@@ -113,8 +113,8 @@ void pl_unload_datum_shift_data(PLDatumShiftBuffer *pl_buf) {
 cl_int pl_shift_datum(PLContext *pl_ctx, PLDatum src_datum, PLDatum dst_datum, PLSpheroid dst_spheroid,
                       PLDatumShiftBuffer *pl_buf, float *xy_out) {
     cl_int error = CL_SUCCESS;
-    cl_kernel transform_kernel = _pl_find_kernel(pl_ctx, "pl_cartesian_apply_affine_transform");
-    cl_kernel geodesic_kernel = _pl_find_kernel(pl_ctx, "pl_cartesian_to_geodesic");
+    cl_kernel transform_kernel = pl_find_kernel(pl_ctx, "pl_cartesian_apply_affine_transform");
+    cl_kernel geodesic_kernel = pl_find_kernel(pl_ctx, "pl_cartesian_to_geodesic");
     
     if (geodesic_kernel == NULL || transform_kernel == NULL)
         return CL_INVALID_KERNEL_NAME;

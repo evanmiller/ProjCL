@@ -154,7 +154,7 @@ PLPointGridBuffer *pl_load_grid(PLContext *pl_ctx,
             *outError = error;
         return NULL;
     }
-    cl_kernel load_grid_kernel = _pl_find_kernel(pl_ctx, "pl_load_grid");
+    cl_kernel load_grid_kernel = pl_find_kernel(pl_ctx, "pl_load_grid");
     if (load_grid_kernel == NULL) {
         pl_unload_grid(grid);
         if (outError)
@@ -197,7 +197,7 @@ cl_int pl_transform_grid(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridB
         0.0, sy, ty,
         0.0, 0.0 };
     
-    cl_kernel transform_kernel = _pl_find_kernel(pl_ctx, "pl_cartesian_apply_affine_transform_2d");
+    cl_kernel transform_kernel = pl_find_kernel(pl_ctx, "pl_cartesian_apply_affine_transform_2d");
     if (transform_kernel == NULL) {
         return CL_INVALID_KERNEL_NAME;
     }
@@ -246,9 +246,9 @@ cl_int pl_shift_grid_datum(PLContext *pl_ctx, PLPointGridBuffer *src, PLDatum sr
         goto cleanup;
     }
     
-    cl_kernel cartesian_kernel = _pl_find_kernel(pl_ctx, "pl_geodesic_to_cartesian");
-    cl_kernel transform_kernel = _pl_find_kernel(pl_ctx, "pl_cartesian_apply_affine_transform");
-    cl_kernel geodesic_kernel = _pl_find_kernel(pl_ctx, "pl_cartesian_to_geodesic");
+    cl_kernel cartesian_kernel = pl_find_kernel(pl_ctx, "pl_geodesic_to_cartesian");
+    cl_kernel transform_kernel = pl_find_kernel(pl_ctx, "pl_cartesian_apply_affine_transform");
+    cl_kernel geodesic_kernel = pl_find_kernel(pl_ctx, "pl_cartesian_to_geodesic");
     
     if (cartesian_kernel == NULL || geodesic_kernel == NULL || transform_kernel == NULL)
         return CL_INVALID_KERNEL_NAME;
@@ -286,12 +286,8 @@ cleanup:
 
 static cl_int _pl_project_grid(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
         PLPointGridBuffer *src, PLPointGridBuffer *dst, int fwd) {
-    const char *name = _pl_proj_name(proj);
     cl_kernel kernel = NULL;
     cl_int error = CL_SUCCESS;
-
-    if (name == NULL)
-        return CL_INVALID_KERNEL_NAME;
 
     if (proj == PL_PROJECT_LAMBERT_CONFORMAL_CONIC && fabs((params->rlat1 + params->rlat2) * DEG_TO_RAD) < 1.e-7) {
         /* With symmetrical standard parallels the LCC equations break down.
@@ -305,7 +301,7 @@ static cl_int _pl_project_grid(PLContext *pl_ctx, PLProjection proj, PLProjectio
         return error;
     }
 
-    kernel = _pl_find_projection_kernel(pl_ctx, name, fwd, params->spheroid);
+    kernel = pl_find_projection_kernel(pl_ctx, proj, fwd, params->spheroid);
     if (kernel == NULL) {
         return CL_INVALID_KERNEL_NAME;
     }
@@ -343,13 +339,13 @@ cl_int pl_sample_image(PLContext *pl_ctx, PLPointGridBuffer *grid, PLImageBuffer
     cl_kernel kernel = NULL;
 
     if (filter == PL_IMAGE_FILTER_NEAREST_NEIGHBOR) {
-        kernel = _pl_find_kernel(pl_ctx, "pl_sample_image_nearest");
+        kernel = pl_find_kernel(pl_ctx, "pl_sample_image_nearest");
     } else if (filter == PL_IMAGE_FILTER_BILINEAR) {
-        kernel = _pl_find_kernel(pl_ctx, "pl_sample_image_linear");
+        kernel = pl_find_kernel(pl_ctx, "pl_sample_image_linear");
     } else if (filter == PL_IMAGE_FILTER_BICUBIC) {
-        kernel = _pl_find_kernel(pl_ctx, "pl_sample_image_bicubic");
+        kernel = pl_find_kernel(pl_ctx, "pl_sample_image_bicubic");
     } else if (filter == PL_IMAGE_FILTER_QUASI_BICUBIC) {
-        kernel = _pl_find_kernel(pl_ctx, "pl_sample_image_quasi_bicubic");
+        kernel = pl_find_kernel(pl_ctx, "pl_sample_image_quasi_bicubic");
     }
     if (kernel == NULL) {
         clReleaseMemObject(out_image);
@@ -404,13 +400,13 @@ cl_int pl_sample_image_array(PLContext *pl_ctx, PLPointGridBuffer *grid, PLImage
     
     cl_kernel kernel = NULL;
     if (filter == PL_IMAGE_FILTER_NEAREST_NEIGHBOR) {
-        kernel = _pl_find_kernel(pl_ctx, "pl_sample_image_array_nearest");
+        kernel = pl_find_kernel(pl_ctx, "pl_sample_image_array_nearest");
     } else if (filter == PL_IMAGE_FILTER_BILINEAR) {
-        kernel = _pl_find_kernel(pl_ctx, "pl_sample_image_array_linear");
+        kernel = pl_find_kernel(pl_ctx, "pl_sample_image_array_linear");
     } else if (filter == PL_IMAGE_FILTER_BICUBIC) {
-        kernel = _pl_find_kernel(pl_ctx, "pl_sample_image_array_bicubic");
+        kernel = pl_find_kernel(pl_ctx, "pl_sample_image_array_bicubic");
     } else if (filter == PL_IMAGE_FILTER_QUASI_BICUBIC) {
-        kernel = _pl_find_kernel(pl_ctx, "pl_sample_image_array_quasi_bicubic");
+        kernel = pl_find_kernel(pl_ctx, "pl_sample_image_array_quasi_bicubic");
     }
     if (kernel == NULL) {
         clReleaseMemObject(out_image);

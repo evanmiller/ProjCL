@@ -7,31 +7,15 @@
  *
  */
 
+cl_kernel pl_find_kernel(PLContext *pl_ctx, const char *requested_name);
+cl_kernel pl_find_projection_kernel(PLContext *pl_ctx, PLProjection proj, int fwd, PLSpheroid ell);
+
 cl_int pl_read_buffer(cl_command_queue queue, cl_mem xy_out_buf, float *xy_out, size_t out_count);
 
 cl_int pl_enqueue_projection_kernel_points(PLContext *pl_ctx, cl_kernel kernel,
         PLProjection proj, PLProjectionParams *params, PLProjectionBuffer *pl_buf);
 cl_int pl_enqueue_projection_kernel_grid(PLContext *pl_ctx, cl_kernel kernel,
         PLProjection proj, PLProjectionParams *params, PLPointGridBuffer *src, PLPointGridBuffer *dst);
-
-cl_int pl_enqueue_kernel_albers_equal_area(PLContext *pl_ctx, cl_kernel kernel,
-        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
-cl_int pl_enqueue_kernel_american_polyconic(PLContext *pl_ctx, cl_kernel kernel,
-        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
-cl_int pl_enqueue_kernel_lambert_azimuthal_equal_area(PLContext *pl_ctx, cl_kernel kernel,
-        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
-cl_int pl_enqueue_kernel_lambert_conformal_conic(PLContext *pl_ctx, cl_kernel kernel,
-        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
-cl_int pl_enqueue_kernel_mercator(PLContext *pl_ctx, cl_kernel kernel,
-        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
-cl_int pl_enqueue_kernel_oblique_stereographic(PLContext *pl_ctx, cl_kernel kernel,
-        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
-cl_int pl_enqueue_kernel_robinson(PLContext *pl_ctx, cl_kernel kernel,
-        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
-cl_int pl_enqueue_kernel_transverse_mercator(PLContext *pl_ctx, cl_kernel kernel,
-        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
-cl_int pl_enqueue_kernel_winkel_tripel(PLContext *pl_ctx, cl_kernel kernel,
-        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
 
 cl_int pl_run_kernel_forward_geodesic_fixed_distance(cl_kernel kernel, PLContext *pl_ctx, 
     PLForwardGeodesicFixedDistanceBuffer *pl_buf, float *xy_out, PLSpheroid pl_ell, float distance);

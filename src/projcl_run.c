@@ -28,6 +28,84 @@ typedef double __CLPK_doublereal;
 
 #define SEC_TO_RAD 4.84813681109535993589914102357e-6
 
+static cl_int pl_enqueue_kernel_albers_equal_area(PLContext *pl_ctx, cl_kernel kernel,
+        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
+static cl_int pl_enqueue_kernel_american_polyconic(PLContext *pl_ctx, cl_kernel kernel,
+        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
+static cl_int pl_enqueue_kernel_lambert_azimuthal_equal_area(PLContext *pl_ctx, cl_kernel kernel,
+        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
+static cl_int pl_enqueue_kernel_lambert_conformal_conic(PLContext *pl_ctx, cl_kernel kernel,
+        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
+static cl_int pl_enqueue_kernel_mercator(PLContext *pl_ctx, cl_kernel kernel,
+        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
+static cl_int pl_enqueue_kernel_oblique_stereographic(PLContext *pl_ctx, cl_kernel kernel,
+        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
+static cl_int pl_enqueue_kernel_robinson(PLContext *pl_ctx, cl_kernel kernel,
+        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
+static cl_int pl_enqueue_kernel_transverse_mercator(PLContext *pl_ctx, cl_kernel kernel,
+        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
+static cl_int pl_enqueue_kernel_winkel_tripel(PLContext *pl_ctx, cl_kernel kernel,
+        PLProjectionParams *params, cl_mem xy_in, cl_mem xy_out, size_t count);
+
+struct pl_projection_info {
+    PLProjection proj;
+    char         name[80];
+    cl_int (*func)(PLContext *pl_ctx,
+                          cl_kernel kernel,
+                          PLProjectionParams *params,
+                          cl_mem xy_in,
+                          cl_mem xy_out,
+                          size_t count);
+};
+
+static struct pl_projection_info _pl_projection_info[] = {
+    {
+        .proj = PL_PROJECT_ALBERS_EQUAL_AREA,
+        .name = "albers_equal_area",
+        .func = &pl_enqueue_kernel_albers_equal_area,
+    },
+    {
+        .proj = PL_PROJECT_AMERICAN_POLYCONIC,
+        .name = "american_polyconic",
+        .func = &pl_enqueue_kernel_american_polyconic,
+    },
+    {
+        .proj = PL_PROJECT_LAMBERT_AZIMUTHAL_EQUAL_AREA,
+        .name = "lambert_azimuthal_equal_area",
+        .func = &pl_enqueue_kernel_lambert_azimuthal_equal_area,
+    },
+    {
+        .proj = PL_PROJECT_LAMBERT_CONFORMAL_CONIC,
+        .name = "lambert_conformal_conic",
+        .func = &pl_enqueue_kernel_lambert_conformal_conic,
+    },
+    {
+        .proj = PL_PROJECT_MERCATOR,
+        .name = "mercator",
+        .func = &pl_enqueue_kernel_mercator,
+    },
+    {
+        .proj = PL_PROJECT_OBLIQUE_STEREOGRAPHIC,
+        .name = "oblique_stereographic",
+        .func = &pl_enqueue_kernel_oblique_stereographic,
+    },
+    {
+        .proj = PL_PROJECT_ROBINSON,
+        .name = "robinson",
+        .func = &pl_enqueue_kernel_robinson,
+    },
+    {
+        .proj = PL_PROJECT_TRANSVERSE_MERCATOR,
+        .name = "transverse_mercator",
+        .func = &pl_enqueue_kernel_transverse_mercator,
+    },
+    {
+        .proj = PL_PROJECT_WINKEL_TRIPEL,
+        .name = "winkel_tripel",
+        .func = &pl_enqueue_kernel_winkel_tripel,
+    }
+};
+
 struct pl_datum_info {
     double dx;
     double dy;
@@ -183,26 +261,53 @@ cl_int pl_read_buffer(cl_command_queue queue, cl_mem xy_out_buf, float *xy_out, 
 static cl_int _pl_enqueue_projection_kernel(PLContext *pl_ctx, cl_kernel kernel, PLProjection proj, PLProjectionParams *params,
         cl_mem xy_in, cl_mem xy_out, size_t count) {
     cl_int error = CL_SUCCESS;
-    if (proj == PL_PROJECT_ALBERS_EQUAL_AREA) {
-        error = pl_enqueue_kernel_albers_equal_area(pl_ctx, kernel, params, xy_in, xy_out, count);
-    } else if (proj == PL_PROJECT_AMERICAN_POLYCONIC) {
-        error = pl_enqueue_kernel_american_polyconic(pl_ctx, kernel, params, xy_in, xy_out, count);
-    } else if (proj == PL_PROJECT_LAMBERT_CONFORMAL_CONIC) {
-        error = pl_enqueue_kernel_lambert_conformal_conic(pl_ctx, kernel, params, xy_in, xy_out, count);
-    } else if (proj == PL_PROJECT_LAMBERT_AZIMUTHAL_EQUAL_AREA) {
-        error = pl_enqueue_kernel_lambert_azimuthal_equal_area(pl_ctx, kernel, params, xy_in, xy_out, count);
-    } else if (proj == PL_PROJECT_MERCATOR) {
-        error = pl_enqueue_kernel_mercator(pl_ctx, kernel, params, xy_in, xy_out, count);
-    } else if (proj == PL_PROJECT_OBLIQUE_STEREOGRAPHIC) {
-        error = pl_enqueue_kernel_oblique_stereographic(pl_ctx, kernel, params, xy_in, xy_out, count);
-    } else if (proj == PL_PROJECT_ROBINSON) {
-        error = pl_enqueue_kernel_robinson(pl_ctx, kernel, params, xy_in, xy_out, count);
-    } else if (proj == PL_PROJECT_TRANSVERSE_MERCATOR) {
-        error = pl_enqueue_kernel_transverse_mercator(pl_ctx, kernel, params, xy_in, xy_out, count);
-    } else if (proj == PL_PROJECT_WINKEL_TRIPEL) {
-        error = pl_enqueue_kernel_winkel_tripel(pl_ctx, kernel, params, xy_in, xy_out, count);
+    int i;
+    for (i=0; i<sizeof(_pl_projection_info)/sizeof(_pl_projection_info[0]); i++) {
+        if (_pl_projection_info[i].proj == proj) {
+            error = _pl_projection_info[i].func(pl_ctx, kernel, params, xy_in, xy_out, count);
+            break;
+        }
     }
     return error;
+}
+
+static const char *_pl_proj_name(PLProjection proj) {
+    int i=0;
+    const char *name = NULL;
+    for (i=0; i<sizeof(_pl_projection_info)/sizeof(_pl_projection_info[0]); i++) {
+        if (_pl_projection_info[i].proj == proj) {
+            name = _pl_projection_info[i].name;
+            break;
+        }
+    }
+    return name;
+}
+
+cl_kernel pl_find_kernel(PLContext *pl_ctx, const char *requested_name) {
+	char buf[128];
+	size_t len;
+	cl_int error;
+	cl_kernel kernel;
+	int i;
+	for (i=0; i<pl_ctx->kernel_count; i++) {
+		kernel = pl_ctx->kernels[i];
+		error = clGetKernelInfo(kernel, CL_KERNEL_FUNCTION_NAME, 
+								sizeof(buf), buf, &len);
+		if (strncmp(requested_name, buf, len) == 0) {
+			return kernel;
+		}
+	}
+	return NULL;
+}
+
+cl_kernel pl_find_projection_kernel(PLContext *pl_ctx, PLProjection proj, int fwd, PLSpheroid ell) {
+	char requested_name[128];
+	if (fwd) {
+		sprintf(requested_name, "pl_project_%s_%c", _pl_proj_name(proj), _pl_spheroid_is_spherical(ell) ? 's' : 'e');
+	} else {
+		sprintf(requested_name, "pl_unproject_%s_%c", _pl_proj_name(proj), _pl_spheroid_is_spherical(ell) ? 's' : 'e');
+	}
+	return pl_find_kernel(pl_ctx, requested_name);
 }
 
 cl_int pl_enqueue_projection_kernel_points(PLContext *pl_ctx, cl_kernel kernel, PLProjection proj, PLProjectionParams *params,
