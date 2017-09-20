@@ -17,8 +17,8 @@
 void pl_swap_grid_buffers(PLPointGridBuffer *grid);
 
 PLImageArrayBuffer *pl_load_image_array(PLContext *pl_ctx,
-                                        int channel_order,
-                                        int channel_type,
+                                        cl_channel_order channel_order,
+                                        cl_channel_type channel_type,
                                         size_t width,
                                         size_t height,
                                         size_t row_pitch, 
@@ -73,8 +73,8 @@ PLImageArrayBuffer *pl_load_image_array(PLContext *pl_ctx,
 }
 
 PLImageBuffer *pl_load_image(PLContext *pl_ctx, 
-                             int channel_order,
-                             int channel_type,
+                             cl_channel_order channel_order,
+                             cl_channel_type channel_type,
                              size_t width,
                              size_t height,
                              size_t row_pitch,
