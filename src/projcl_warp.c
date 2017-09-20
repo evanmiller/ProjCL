@@ -16,18 +16,10 @@
 
 void pl_swap_grid_buffers(PLPointGridBuffer *grid);
 
-PLImageArrayBuffer *pl_load_image_array(PLContext *pl_ctx,
-                                        cl_channel_order channel_order,
-                                        cl_channel_type channel_type,
-                                        size_t width,
-                                        size_t height,
-                                        size_t row_pitch, 
-                                        size_t slice_pitch,
-                                        size_t tiles_across,
-                                        size_t tiles_down,
-                                        const void *pvData,
-                                        int do_copy,
-                                        cl_int *outError) {
+PLImageArrayBuffer *pl_load_image_array(PLContext *pl_ctx, cl_channel_order channel_order, cl_channel_type channel_type,
+        size_t width, size_t height, size_t row_pitch, 
+        size_t slice_pitch, size_t tiles_across, size_t tiles_down,
+        const void *pvData, int do_copy, cl_int *outError) {
     cl_int error = CL_SUCCESS;
     
     PLImageArrayBuffer *buf;
@@ -72,15 +64,9 @@ PLImageArrayBuffer *pl_load_image_array(PLContext *pl_ctx,
 
 }
 
-PLImageBuffer *pl_load_image(PLContext *pl_ctx, 
-                             cl_channel_order channel_order,
-                             cl_channel_type channel_type,
-                             size_t width,
-                             size_t height,
-                             size_t row_pitch,
-                             const void* pvData,
-                             int do_copy,
-                             cl_int *outError) {
+PLImageBuffer *pl_load_image(PLContext *pl_ctx, cl_channel_order channel_order, cl_channel_type channel_type,
+        size_t width, size_t height, size_t row_pitch,
+        const void* pvData, int do_copy, cl_int *outError) {
     cl_int error = CL_SUCCESS;
     
     PLImageBuffer *buf;
