@@ -106,12 +106,12 @@ __kernel void pl_forward_geodesic_fixed_angle_s(
 	float phi1 = radians(lp_in.s1);
 	
 	float sinPhi, cosPhi;
+	float8 sinDistance, cosDistance;
+	float8 lam2, phi2;
+	
     sinPhi = sincos(phi1, &cosPhi);
 	
-	float8 sinDistance, cosDistance;
     sinDistance = sincos(dist[i], &cosDistance);
-	
-	float8 lam2, phi2;
 	
 	phi2 = asin(sinPhi * cosDistance + cosPhi * sinDistance * cosAz);
 	lam2 = lam1 + atan2(sinDistance * sinAz, 

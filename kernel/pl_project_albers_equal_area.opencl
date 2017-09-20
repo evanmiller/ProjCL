@@ -13,8 +13,7 @@ float8 phi1_(float8 qs, float Te, float Tone_es) {
 		sinphi = sincos(Phi, &cosphi);
 		con = Te * sinphi;
 		com = 1.f - con * con;
-		dphi = .5f * com * com / cosphi * (qs / Tone_es -
-		   sinphi / com + .5f / Te * (log1p(-con) - log1p(con)));
+		dphi = .5f * com * com / cosphi * (qs / Tone_es - sinphi / com + .5f / Te * (log1p(-con) - log1p(con)));
 		Phi += dphi;
 	} while (any(fabs(dphi) > TOL7) && --i);
 	
