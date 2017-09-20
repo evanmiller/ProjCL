@@ -84,14 +84,14 @@ typedef struct PLImageArrayBuffer_s {
 PLImageBuffer *pl_load_image(PLContext *pl_ctx,
         cl_channel_order channel_order, cl_channel_type channel_type,
         size_t width, size_t height, size_t row_pitch,
-        const void* pvData, int copy, int *outError);
+        const void* pvData, cl_bool copy, cl_int *outError);
 void pl_unload_image(PLImageBuffer *buf);
 
 PLImageArrayBuffer *pl_load_image_array(PLContext *pl_ctx,
         cl_channel_order channel_order, cl_channel_type channel_type,
         size_t width, size_t height, size_t row_pitch,
         size_t slice_pitch, size_t tiles_across, size_t tiles_down,
-        const void *pvData, int do_copy, cl_int *outError);
+        const void *pvData, cl_bool copy, cl_int *outError);
 void pl_unload_image_array(PLImageArrayBuffer *buf);
 
 cl_int pl_sample_image(PLContext *pl_ctx, PLPointGridBuffer *grid, PLImageBuffer *img,
@@ -99,15 +99,15 @@ cl_int pl_sample_image(PLContext *pl_ctx, PLPointGridBuffer *grid, PLImageBuffer
 cl_int pl_sample_image_array(PLContext *pl_ctx, PLPointGridBuffer *grid, PLImageArrayBuffer *bufs,
         PLImageFilter filter, unsigned char *outData);
 
-PLPointGridBuffer *pl_load_empty_grid(PLContext *pl_ctx, int count_x, int count_y, int *outError);
+PLPointGridBuffer *pl_load_empty_grid(PLContext *pl_ctx, size_t count_x, size_t count_y, int *outError);
 PLPointGridBuffer *pl_load_grid(PLContext *pl_ctx,
-        float origin_x, float width, int count_x,
-        float origin_y, float height, int count_y,
+        double origin_x, double width, size_t count_x,
+        double origin_y, double height, size_t count_y,
         int *outError);
 void pl_unload_grid(PLPointGridBuffer *grid);
 
 cl_int pl_transform_grid(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
-        float sx, float sy, float tx, float ty);
+        double sx, double sy, double tx, double ty);
 cl_int pl_shift_grid_datum(PLContext *pl_ctx,
         PLPointGridBuffer *src, PLDatum src_datum, PLSpheroid src_spheroid,
         PLPointGridBuffer *dst, PLDatum dst_datum, PLSpheroid dst_spheroid);

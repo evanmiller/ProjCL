@@ -14,7 +14,7 @@
 #include <math.h>
 #include <sys/time.h>
 
-PLProjectionBuffer *pl_load_projection_data(PLContext *pl_ctx, const float *xy, int count, int copy, int *outError) {
+PLProjectionBuffer *pl_load_projection_data(PLContext *pl_ctx, const float *xy, size_t count, cl_bool copy, cl_int *outError) {
 	float *xy_pad = NULL;
 	int xy_pad_count = ck_padding(count, PL_FLOAT_VECTOR_SIZE);
 

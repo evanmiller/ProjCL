@@ -9,10 +9,11 @@
 #include <projcl/projcl.h>
 #include <stdlib.h>
 #include "projcl_run.h"
+#include "projcl_kernel.h"
 #include "projcl_util.h"
 
 PLDatumShiftBuffer *pl_load_datum_shift_data(PLContext *pl_ctx, PLSpheroid src_spheroid, 
-                                             const float *xy, int n, cl_int *outError) {
+        const float *xy, size_t n, cl_int *outError) {
     PLDatumShiftBuffer *pl_buf = NULL;
     
     cl_int error = CL_SUCCESS;
@@ -67,7 +68,7 @@ PLDatumShiftBuffer *pl_load_datum_shift_data(PLContext *pl_ctx, PLSpheroid src_s
     pl_buf->y_rw = y_rw;
     pl_buf->z_rw = z_rw;
     
-    error = pl_run_kernel_geodesic_to_cartesian(cartesian_kernel, pl_ctx, pl_buf, src_spheroid);
+    error = pl_run_kernel_geodesic_to_cartesian(pl_ctx, cartesian_kernel, pl_buf, src_spheroid);
     
     pl_buf->xy_out = clCreateBuffer(pl_ctx->ctx, CL_MEM_WRITE_ONLY, 
                                     sizeof(cl_float) * xy_pad_count * 2, NULL, &error);
@@ -119,11 +120,11 @@ cl_int pl_shift_datum(PLContext *pl_ctx, PLDatum src_datum, PLDatum dst_datum, P
     if (geodesic_kernel == NULL || transform_kernel == NULL)
         return CL_INVALID_KERNEL_NAME;
     
-    error = pl_run_kernel_transform_cartesian(transform_kernel, pl_ctx, pl_buf, src_datum, dst_datum);
+    error = pl_run_kernel_transform_cartesian(pl_ctx, transform_kernel, pl_buf, src_datum, dst_datum);
     if (error != CL_SUCCESS)
         return error;
     
-    error = pl_run_kernel_cartesian_to_geodesic(geodesic_kernel, pl_ctx, pl_buf, xy_out, dst_spheroid);
+    error = pl_run_kernel_cartesian_to_geodesic(pl_ctx, geodesic_kernel, pl_buf, xy_out, dst_spheroid);
     if (error != CL_SUCCESS)
         return error;
     

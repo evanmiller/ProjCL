@@ -10,10 +10,11 @@
 #include <projcl/projcl.h>
 #include "projcl_run.h"
 #include "projcl_util.h"
+#include "projcl_kernel.h"
 #include "projcl_spheroid.h"
 
 PLForwardGeodesicFixedDistanceBuffer *pl_load_forward_geodesic_fixed_distance_data(PLContext *pl_ctx,
-    const float *xy_in, int xy_count, const float *az_in, int az_count, cl_int *outError)
+    const float *xy_in, size_t xy_count, const float *az_in, size_t az_count, cl_int *outError)
 {
 	cl_int error;
 	
@@ -106,7 +107,7 @@ void pl_unload_forward_geodesic_fixed_distance_data(PLForwardGeodesicFixedDistan
 }
 
 PLForwardGeodesicFixedAngleBuffer *pl_load_forward_geodesic_fixed_angle_data(PLContext *pl_ctx,
-    const float *dist_in, int dist_count, cl_int *outError) {
+    const float *dist_in, size_t dist_count, cl_int *outError) {
     cl_int error;
     
     PLForwardGeodesicFixedAngleBuffer *pl_buf;
@@ -161,8 +162,8 @@ void pl_unload_forward_geodesic_fixed_angle_data(PLForwardGeodesicFixedAngleBuff
     free(pl_buf);
 }
 
-cl_int pl_forward_geodesic_fixed_distance(PLContext *pl_ctx, PLForwardGeodesicFixedDistanceBuffer *pl_buf, float *xy_out, 
-    PLSpheroid pl_ell, float distance) {
+cl_int pl_forward_geodesic_fixed_distance(PLContext *pl_ctx, PLForwardGeodesicFixedDistanceBuffer *pl_buf,
+        float *xy_out, PLSpheroid pl_ell, double distance) {
 	cl_kernel sincos_kernel = NULL, sincos1_kernel = NULL, fwd_kernel = NULL;
 	
 	if (_pl_spheroid_is_spherical(pl_ell)) {
@@ -189,8 +190,8 @@ cl_int pl_forward_geodesic_fixed_distance(PLContext *pl_ctx, PLForwardGeodesicFi
 	
 	cl_int error = CL_SUCCESS;
 	
-	error |= clSetKernelArg(sincos1_kernel, 0, sizeof(cl_mem), &pl_buf->xy_in);
-	error |= clSetKernelArg(sincos1_kernel, 1, sizeof(cl_mem), &pl_buf->phi_sincos);	
+	error |= pl_set_kernel_arg_mem(pl_ctx, sincos1_kernel, 0, pl_buf->xy_in);
+	error |= pl_set_kernel_arg_mem(pl_ctx, sincos1_kernel, 1, pl_buf->phi_sincos);	
 	if (error != CL_SUCCESS) {
 		return error;
 	}
@@ -201,8 +202,8 @@ cl_int pl_forward_geodesic_fixed_distance(PLContext *pl_ctx, PLForwardGeodesicFi
 		return error;
 	}
 	
-	error |= clSetKernelArg(sincos_kernel, 0, sizeof(cl_mem), &pl_buf->az_in);
-	error |= clSetKernelArg(sincos_kernel, 1, sizeof(cl_mem), &pl_buf->az_sincos);
+	error |= pl_set_kernel_arg_mem(pl_ctx, sincos_kernel, 0, pl_buf->az_in);
+	error |= pl_set_kernel_arg_mem(pl_ctx, sincos_kernel, 1, pl_buf->az_sincos);
 	if (error != CL_SUCCESS) {
 		return error;
 	}
@@ -213,13 +214,13 @@ cl_int pl_forward_geodesic_fixed_distance(PLContext *pl_ctx, PLForwardGeodesicFi
 		return error;
 	}
 	
-	return pl_run_kernel_forward_geodesic_fixed_distance(fwd_kernel, pl_ctx, pl_buf, 
-                                                         xy_out, pl_ell, distance);
+	return pl_run_kernel_forward_geodesic_fixed_distance(
+            pl_ctx, fwd_kernel, pl_buf, xy_out, pl_ell, distance);
 }
 
-int pl_forward_geodesic_fixed_angle(PLContext *pl_ctx,
-    PLForwardGeodesicFixedAngleBuffer *pl_buf, float *xy_in, float *xy_out,
-    PLSpheroid pl_ell, float angle) {
+int pl_forward_geodesic_fixed_angle(PLContext *pl_ctx, PLForwardGeodesicFixedAngleBuffer *pl_buf,
+        float *xy_in, float *xy_out, PLSpheroid pl_ell, double angle) {
+    double start[2] = { xy_in[0], xy_in[1] };
     cl_kernel fwd_kernel = NULL;
     if (_pl_spheroid_is_spherical(pl_ell)) {
         fwd_kernel = pl_find_kernel(pl_ctx, "pl_forward_geodesic_fixed_angle_s");
@@ -230,14 +231,14 @@ int pl_forward_geodesic_fixed_angle(PLContext *pl_ctx,
         return CL_INVALID_KERNEL_NAME;
     }
     
-    return pl_run_kernel_forward_geodesic_fixed_angle(fwd_kernel, pl_ctx, pl_buf, 
-                                                      xy_in, xy_out, pl_ell, angle);
+    return pl_run_kernel_forward_geodesic_fixed_angle(
+            pl_ctx, fwd_kernel, pl_buf, start, xy_out, pl_ell, angle);
 }
 
 PLInverseGeodesicBuffer *pl_load_inverse_geodesic_data(PLContext *pl_ctx,
-													   const float *xy1_in, int xy1_count, int xy1_copy,
-													   const float *xy2_in, int xy2_count, 
-													   cl_int *outError)
+        const float *xy1_in, size_t xy1_count, cl_bool xy1_copy,
+        const float *xy2_in, size_t xy2_count, 
+        cl_int *outError)
 {
 	cl_int error = CL_SUCCESS;
 	
@@ -306,7 +307,7 @@ void pl_unload_inverse_geodesic_data(PLInverseGeodesicBuffer *pl_buf) {
 }
 
 cl_int pl_inverse_geodesic(PLContext *pl_ctx, PLInverseGeodesicBuffer *pl_buf, float *dist_out,
-						   PLSpheroid pl_ell, float scale) {
+        PLSpheroid pl_ell, double scale) {
 	cl_kernel inv_kernel = NULL;
 	
 	if (_pl_spheroid_is_spherical(pl_ell)) {
@@ -318,5 +319,5 @@ cl_int pl_inverse_geodesic(PLContext *pl_ctx, PLInverseGeodesicBuffer *pl_buf, f
 		return CL_INVALID_KERNEL_NAME;
 	}
 	
-	return pl_run_kernel_inverse_geodesic(inv_kernel, pl_ctx, pl_buf, dist_out, pl_ell, scale);
+	return pl_run_kernel_inverse_geodesic(pl_ctx, inv_kernel, pl_buf, dist_out, pl_ell, scale);
 }

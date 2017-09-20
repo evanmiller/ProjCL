@@ -10,6 +10,7 @@
 #include <projcl/projcl_warp.h>
 #include "projcl_util.h"
 #include "projcl_run.h"
+#include "projcl_kernel.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -19,7 +20,7 @@ void pl_swap_grid_buffers(PLPointGridBuffer *grid);
 PLImageArrayBuffer *pl_load_image_array(PLContext *pl_ctx, cl_channel_order channel_order, cl_channel_type channel_type,
         size_t width, size_t height, size_t row_pitch, 
         size_t slice_pitch, size_t tiles_across, size_t tiles_down,
-        const void *pvData, int do_copy, cl_int *outError) {
+        const void *pvData, cl_bool copy, cl_int *outError) {
     cl_int error = CL_SUCCESS;
     
     PLImageArrayBuffer *buf;
@@ -46,7 +47,7 @@ PLImageArrayBuffer *pl_load_image_array(PLContext *pl_ctx, cl_channel_order chan
 
     buf->image_format = image_format;
     buf->image_desc = image_desc;
-    buf->image = clCreateImage(pl_ctx->ctx, CL_MEM_READ_ONLY | (do_copy ? CL_MEM_COPY_HOST_PTR : CL_MEM_USE_HOST_PTR),
+    buf->image = clCreateImage(pl_ctx->ctx, CL_MEM_READ_ONLY | (copy ? CL_MEM_COPY_HOST_PTR : CL_MEM_USE_HOST_PTR),
             &buf->image_format, &buf->image_desc, (void *)pvData, &error);
     
     if (buf->image == NULL) {
@@ -66,7 +67,7 @@ PLImageArrayBuffer *pl_load_image_array(PLContext *pl_ctx, cl_channel_order chan
 
 PLImageBuffer *pl_load_image(PLContext *pl_ctx, cl_channel_order channel_order, cl_channel_type channel_type,
         size_t width, size_t height, size_t row_pitch,
-        const void* pvData, int do_copy, cl_int *outError) {
+        const void* pvData, cl_bool copy, cl_int *outError) {
     cl_int error = CL_SUCCESS;
     
     PLImageBuffer *buf;
@@ -88,7 +89,7 @@ PLImageBuffer *pl_load_image(PLContext *pl_ctx, cl_channel_order channel_order, 
 
     buf->image_format = image_format;
     buf->image_desc = image_desc;
-    buf->image = clCreateImage(pl_ctx->ctx, CL_MEM_READ_ONLY | (do_copy ? CL_MEM_COPY_HOST_PTR : CL_MEM_USE_HOST_PTR),
+    buf->image = clCreateImage(pl_ctx->ctx, CL_MEM_READ_ONLY | (copy ? CL_MEM_COPY_HOST_PTR : CL_MEM_USE_HOST_PTR),
             &buf->image_format, &buf->image_desc, (void *)pvData, &error);
     
     if (buf->image == NULL) {
@@ -105,7 +106,7 @@ PLImageBuffer *pl_load_image(PLContext *pl_ctx, cl_channel_order channel_order, 
     return buf;
 }
 
-PLPointGridBuffer *pl_load_empty_grid(PLContext *pl_ctx, int count_x, int count_y, int *outError) {
+PLPointGridBuffer *pl_load_empty_grid(PLContext *pl_ctx, size_t count_x, size_t count_y, int *outError) {
     cl_int error = CL_SUCCESS;
     PLPointGridBuffer *grid;
     if ((grid = malloc(sizeof(PLPointGridBuffer))) == NULL) {
@@ -130,9 +131,9 @@ PLPointGridBuffer *pl_load_empty_grid(PLContext *pl_ctx, int count_x, int count_
 }
 
 PLPointGridBuffer *pl_load_grid(PLContext *pl_ctx,
-                                float origin_x, float width, int count_x,
-                                float origin_y, float height, int count_y,
-                                int *outError) {
+        double origin_x, double width, size_t count_x,
+        double origin_y, double height, size_t count_y,
+        int *outError) {
     int error = CL_SUCCESS;
     PLPointGridBuffer *grid = pl_load_empty_grid(pl_ctx, count_x, count_y, &error);
     if (grid == NULL) {
@@ -150,12 +151,12 @@ PLPointGridBuffer *pl_load_grid(PLContext *pl_ctx,
     
     cl_uint argc = 0;
     
-    float origin[2] = { origin_x, origin_y };
-    float size[2] = { width, height };
+    double origin[2] = { origin_x, origin_y };
+    double size[2] = { width, height };
     
-    error |= clSetKernelArg(load_grid_kernel, argc++, sizeof(cl_mem), &grid->grid);
-    error |= clSetKernelArg(load_grid_kernel, argc++, sizeof(cl_float2), origin);
-    error |= clSetKernelArg(load_grid_kernel, argc++, sizeof(cl_float2), size);
+    error |= pl_set_kernel_arg_mem(pl_ctx, load_grid_kernel, argc++, grid->grid);
+    error |= pl_set_kernel_arg_float2(pl_ctx, load_grid_kernel, argc++, origin);
+    error |= pl_set_kernel_arg_float2(pl_ctx, load_grid_kernel, argc++, size);
     
     if (error != CL_SUCCESS) {
         pl_unload_grid(grid);
@@ -177,8 +178,9 @@ PLPointGridBuffer *pl_load_grid(PLContext *pl_ctx,
     return grid;
 }
 
-cl_int pl_transform_grid(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst, float sx, float sy, float tx, float ty) {
-    float matrix[8] = { 
+cl_int pl_transform_grid(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridBuffer *dst,
+        double sx, double sy, double tx, double ty) {
+    double matrix[8] = { 
         sx, 0.0, tx,
         0.0, sy, ty,
         0.0, 0.0 };
@@ -192,9 +194,9 @@ cl_int pl_transform_grid(PLContext *pl_ctx, PLPointGridBuffer *src, PLPointGridB
     
     cl_uint argc = 0;
     
-    error |= clSetKernelArg(transform_kernel, argc++, sizeof(cl_mem), &src->grid);
-    error |= clSetKernelArg(transform_kernel, argc++, sizeof(cl_mem), &dst->grid);
-    error |= clSetKernelArg(transform_kernel, argc++, sizeof(cl_float8), matrix);
+    error |= pl_set_kernel_arg_mem(pl_ctx, transform_kernel, argc++, src->grid);
+    error |= pl_set_kernel_arg_mem(pl_ctx, transform_kernel, argc++, dst->grid);
+    error |= pl_set_kernel_arg_float8(pl_ctx, transform_kernel, argc++, matrix);
     
     if (error != CL_SUCCESS) {
         return error;
@@ -215,6 +217,14 @@ cl_int pl_shift_grid_datum(PLContext *pl_ctx, PLPointGridBuffer *src, PLDatum sr
     int xy_pad_count = ck_padding(src->height * src->width, PL_FLOAT_VECTOR_SIZE);
     
     cl_mem x_rw = NULL, y_rw = NULL, z_rw = NULL;
+    PLDatumShiftBuffer *pl_buf = NULL;
+
+    cl_kernel cartesian_kernel = pl_find_kernel(pl_ctx, "pl_geodesic_to_cartesian");
+    cl_kernel transform_kernel = pl_find_kernel(pl_ctx, "pl_cartesian_apply_affine_transform");
+    cl_kernel geodesic_kernel = pl_find_kernel(pl_ctx, "pl_cartesian_to_geodesic");
+    
+    if (cartesian_kernel == NULL || geodesic_kernel == NULL || transform_kernel == NULL)
+        return CL_INVALID_KERNEL_NAME;
 
     x_rw = clCreateBuffer(pl_ctx->ctx, CL_MEM_READ_WRITE, 
                           sizeof(cl_float) * xy_pad_count, NULL, &error);
@@ -232,32 +242,25 @@ cl_int pl_shift_grid_datum(PLContext *pl_ctx, PLPointGridBuffer *src, PLDatum sr
         goto cleanup;
     }
     
-    cl_kernel cartesian_kernel = pl_find_kernel(pl_ctx, "pl_geodesic_to_cartesian");
-    cl_kernel transform_kernel = pl_find_kernel(pl_ctx, "pl_cartesian_apply_affine_transform");
-    cl_kernel geodesic_kernel = pl_find_kernel(pl_ctx, "pl_cartesian_to_geodesic");
+    pl_buf = calloc(1,  sizeof(PLDatumShiftBuffer));
+    pl_buf->count = src->height * src->width;
+    pl_buf->xy_in = src->grid;
+    pl_buf->xy_out = dst->grid;
+    pl_buf->x_rw = x_rw;
+    pl_buf->y_rw = y_rw;
+    pl_buf->z_rw = z_rw;
     
-    if (cartesian_kernel == NULL || geodesic_kernel == NULL || transform_kernel == NULL)
-        return CL_INVALID_KERNEL_NAME;
-    
-    PLDatumShiftBuffer pl_buf;
-    pl_buf.count = src->height * src->width;
-    pl_buf.xy_in = src->grid;
-    pl_buf.xy_out = dst->grid;
-    pl_buf.x_rw = x_rw;
-    pl_buf.y_rw = y_rw;
-    pl_buf.z_rw = z_rw;
-    
-    error = pl_run_kernel_geodesic_to_cartesian(cartesian_kernel, pl_ctx, &pl_buf, src_spheroid);
+    error = pl_run_kernel_geodesic_to_cartesian(pl_ctx, cartesian_kernel, pl_buf, src_spheroid);
     if (error != CL_SUCCESS)
         goto cleanup;
     
-    error = pl_run_kernel_transform_cartesian(transform_kernel, pl_ctx, &pl_buf, src_datum, dst_datum);
+    error = pl_run_kernel_transform_cartesian(pl_ctx, transform_kernel, pl_buf, src_datum, dst_datum);
     if (error != CL_SUCCESS)
         goto cleanup;
     
-    error = pl_run_kernel_cartesian_to_geodesic(geodesic_kernel, pl_ctx, &pl_buf, NULL, dst_spheroid);
+    error = pl_run_kernel_cartesian_to_geodesic(pl_ctx, geodesic_kernel, pl_buf, NULL, dst_spheroid);
     if (error != CL_SUCCESS)
-        return error;
+        goto cleanup;
     
 cleanup:
     if (x_rw)
@@ -266,6 +269,8 @@ cleanup:
         clReleaseMemObject(y_rw);
     if (z_rw)
         clReleaseMemObject(z_rw);
+    if (pl_buf)
+        free(pl_buf);
         
     return error;
 }
@@ -339,9 +344,9 @@ cl_int pl_sample_image(PLContext *pl_ctx, PLPointGridBuffer *grid, PLImageBuffer
     }
     
     cl_uint argc = 0;
-    error |= clSetKernelArg(kernel, argc++, sizeof(cl_mem), &grid->grid);
-    error |= clSetKernelArg(kernel, argc++, sizeof(cl_mem), &buf->image);
-    error |= clSetKernelArg(kernel, argc++, sizeof(cl_mem), &out_image);
+    error |= pl_set_kernel_arg_mem(pl_ctx, kernel, argc++, grid->grid);
+    error |= pl_set_kernel_arg_mem(pl_ctx, kernel, argc++, buf->image);
+    error |= pl_set_kernel_arg_mem(pl_ctx, kernel, argc++, out_image);
     
     if (error != CL_SUCCESS) {
         clReleaseMemObject(out_image);
@@ -400,10 +405,10 @@ cl_int pl_sample_image_array(PLContext *pl_ctx, PLPointGridBuffer *grid, PLImage
     }
     
     cl_uint argc = 0;
-    error |= clSetKernelArg(kernel, argc++, sizeof(cl_mem), &grid->grid);
-    error |= clSetKernelArg(kernel, argc++, sizeof(cl_mem), &buf->image);
-    error |= clSetKernelArg(kernel, argc++, sizeof(cl_int), &buf->tiles_across);
-    error |= clSetKernelArg(kernel, argc++, sizeof(cl_mem), &out_image);
+    error |= pl_set_kernel_arg_mem(pl_ctx, kernel, argc++, grid->grid);
+    error |= pl_set_kernel_arg_mem(pl_ctx, kernel, argc++, buf->image);
+    error |= pl_set_kernel_arg_uint(pl_ctx, kernel, argc++, buf->tiles_across);
+    error |= pl_set_kernel_arg_mem(pl_ctx, kernel, argc++, out_image);
     
     if (error != CL_SUCCESS) {
         clReleaseMemObject(out_image);

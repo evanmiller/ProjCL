@@ -95,18 +95,18 @@ typedef struct PLCode_s {
 
 typedef struct PLSpheroidInfo_s {
 	PLSpheroid   tag;
-	float		major_axis;
-	float		minor_axis;
-	float		ecc;
-	float		ecc2;
-	float		one_ecc2;
-	float		ec;
-	float		inverse_flattening;
-	float		en[8];
-    float       apa[4];
-    float       krueger_A;
-	float		krueger_alpha[8];
-	float		krueger_beta[8];
+	double		major_axis;
+	double		minor_axis;
+	double		ecc;
+	double		ecc2;
+	double		one_ecc2;
+	double		ec;
+	double		inverse_flattening;
+	double		en[8];
+    double       apa[4];
+    double       krueger_A;
+	double		krueger_alpha[8];
+	double		krueger_beta[8];
 } PLSpheroidInfo;
 
 typedef struct PLContext_s {
