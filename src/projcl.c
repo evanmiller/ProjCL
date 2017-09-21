@@ -28,6 +28,8 @@
 #define PL_OPENCL_KERNEL_HEADER_FILE "peel.opencl"
 #define PL_OPENCL_KERNEL_FILE_PREFIX "pl_"
 
+#define PL_OPENCL_BUILD_OPTIONS "-cl-finite-math-only -cl-no-signed-zeros"
+
 int check_cl_error(cl_int error, cl_int *outError) {
   if(error != CL_SUCCESS) {
     if (outError != NULL) {
@@ -252,7 +254,7 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
 		return NULL;
 	}
 	
-	error = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+	error = clBuildProgram(program, 0, NULL, PL_OPENCL_BUILD_OPTIONS, NULL, NULL);
 	
 	if (error != CL_SUCCESS) {
 		size_t error_len;
@@ -326,7 +328,7 @@ cl_int pl_load_code(PLContext *pl_ctx, PLCode *pl_code) {
 		return error;
 	}
 	
-	error = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+	error = clBuildProgram(program, 0, NULL, PL_OPENCL_BUILD_OPTIONS, NULL, NULL);
 	
 	if (error != CL_SUCCESS) {
 		clReleaseProgram(program);
