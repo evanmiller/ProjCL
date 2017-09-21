@@ -55,18 +55,18 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_s(
 
     float8 lambda, phi;
 
-    float8 sinZ, cosZ, rho;
+    float8 cosZ, cosZ2, rho, sinPhi;
 
     rho = hypot(x, y);
-    phi = 2.f * asin(0.5f * rho);
 
-    sinZ = sincos(phi, &cosZ);
+    cosZ2 = cos(asin(0.5f * rho));
+    cosZ = 1.f - 2.f * cosZ2 * cosZ2;
 
-    phi = select(asin(cosZ * sinB1 + y * sinZ * cosB1 / rho), 
-            phi0, fabs(rho) <= EPS7);
+    sinPhi = cosZ * sinB1 + y * cosB1 * cosZ2;
+    phi = asin(sinPhi);
 
-    x *= sinZ * cosB1;
-    y = (cosZ - sin(phi) * sinB1) * rho;
+    x *= rho * cosZ2 * cosB1;
+    y = (cosZ - sinPhi * sinB1) * rho;
 
     lambda = select(atan2(x, y), 0.f, y == 0.f);
 
