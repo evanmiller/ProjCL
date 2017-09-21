@@ -63,12 +63,9 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_s(
     cosZ = 1.f - 2.f * cosZ2 * cosZ2;
 
     sinPhi = cosZ * sinB1 + y * cosB1 * cosZ2;
+
     phi = asin(sinPhi);
-
-    x *= rho * cosZ2 * cosB1;
-    y = (cosZ - sinPhi * sinB1) * rho;
-
-    lambda = select(atan2(x, y), 0.f, y == 0.f);
+    lambda = atan2(x * cosZ2 * cosB1, cosZ - sinPhi * sinB1);
 
     xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
     xy_out[i].odd = degrees(phi);
@@ -164,11 +161,9 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_e(
 
     rho = hypot(x, y);
     sCe = sincos(2.f * asin(0.5f * rho / rq), &cCe);
-    x *= sCe;
     beta = asin(cCe * sinB1 + y * sCe * cosB1 / rho);
-    y = rho * cosB1 * cCe - y * sinB1 * sCe;
 
-    lambda = atan2(x, y);    
+    lambda = atan2(x * sCe, rho * cosB1 * cCe - y * sinB1 * sCe);
     
     phi = (beta + apa.s0 * sin(2.f * beta) + apa.s1 * sin(4.f * beta) + apa.s2 * sin(6.f * beta));
      
