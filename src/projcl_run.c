@@ -16,6 +16,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 #ifdef __APPLE__
 #include <Accelerate/Accelerate.h>
 #endif
