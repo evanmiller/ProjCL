@@ -26,36 +26,10 @@
 #define NODES   18
 #define ONEEPS  1.000001f
 
-/* Transverse Mercator */
-#define FC1 1.f
-#define FC2 .5f
-#define FC3 .16666666666666666666f
-#define FC4 .08333333333333333333f
-#define FC5 .05f
-#define FC6 .03333333333333333333f
-#define FC7 .02380952380952380952f
-#define FC8 .01785714285714285714f
-
-float8 pl_mlfn(float8 phi, float8 sphi, float8 cphi, float8 en);
-float8 pl_mlfn1(float8 phi, float8 sphi, float8 cphi, float8 en);
 float8 pl_qsfn(float8 sinphi, float e, float one_es);
 float8 pl_phi2(float8 log_ts, float e);
 float8 pl_mod_pi(float8 phi);
 float4 pl_interpolate_cubic4(float X, float4 A, float4 B, float4 C, float4 D);
-
-float8 pl_mlfn(float8 phi, float8 sphi, float8 cphi, float8 en) {
-	cphi *= sphi;
-	sphi *= sphi;
-	return(en.s0 * phi - cphi * (en.s1 + sphi*(en.s2 + sphi*(en.s3 + sphi*en.s4))));
-}
-
-/* first derivative */
-float8 pl_mlfn1(float8 phi, float8 sphi, float8 cphi, float8 en) {
-    cphi *= cphi;
-    sphi *= sphi;
-    return en.s0 - (en.s1*(cphi-sphi) + sphi*(en.s2*(3*cphi-sphi) 
-                    + sphi*(en.s3*(5*cphi-sphi) + sphi*(en.s4*(7*cphi-sphi)))));
-}
 
 float8 pl_qsfn(float8 sinphi, float e, float one_es) {
 	float8 con = e * sinphi;
