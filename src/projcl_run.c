@@ -217,8 +217,7 @@ static double _pl_mlfn(double phi, double sphi, double cphi, double *en) {
 
 static double _pl_qsfn(double sinphi, double e, double one_es) {
 	double con = e * sinphi;
-	return (one_es * (sinphi / (1.0 - con * con) -
-					  (.5 / e) * (log1p(-con) - log1p(con))));
+	return (one_es * (sinphi / (1.0 - con * con) - (.5 / e) * (log1p(-con) - log1p(con))));
 }
 
 static double _pl_msfn(double sinphi, double cosphi, double es) {
@@ -408,24 +407,28 @@ cl_int pl_enqueue_kernel_lambert_azimuthal_equal_area(PLContext *pl_ctx, cl_kern
     
 	double phi0 = params->lat0 * DEG_TO_RAD;
 
-    double qp = _pl_qsfn(1.0, info.ecc, info.one_ecc2);
-    double sinPhi = sin(phi0);
-    double sinB1 = _pl_qsfn(sinPhi, info.ecc, info.one_ecc2) / qp;
-    double cosB1 = sqrt(1.0 - sinB1 * sinB1);
-
 	error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, params->scale * info.major_axis);
     error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, params->x0);
     error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, params->y0);
     error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, phi0);
     error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, params->lon0 * DEG_TO_RAD);
-	error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, qp);
-	error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, sinB1);
-    error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, cosB1);
-    if (!_pl_spheroid_is_spherical(params->spheroid)) {
+    if (_pl_spheroid_is_spherical(params->spheroid)) {
+        error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, sin(phi0));
+        error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, cos(phi0));
+    } else {
+        double qp = _pl_qsfn(1.0, info.ecc, info.one_ecc2);
+        double sinPhi = sin(phi0);
+        double sinB1 = _pl_qsfn(sinPhi, info.ecc, info.one_ecc2) / qp;
+        double cosB1 = sqrt(1.0 - sinB1 * sinB1);
+
         double rq = sqrt(0.5 * qp);
         double dd = cos(phi0) / (sqrt(1.0 - info.ecc2 * sinPhi * sinPhi) * rq * cosB1);
         double ymf = rq / dd;
         double xmf = rq * dd;
+
+        error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, qp);
+        error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, sinB1);
+        error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, cosB1);
 
         error |= pl_set_kernel_arg_float(pl_ctx, kernel, offset++, rq);
         error |= pl_set_kernel_arg_float4(pl_ctx, kernel, offset++, info.apa);

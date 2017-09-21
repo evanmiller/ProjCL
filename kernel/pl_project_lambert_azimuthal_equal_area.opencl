@@ -10,9 +10,9 @@ __kernel void pl_project_lambert_azimuthal_equal_area_s(
 
     float phi0,
     float lambda0,
-    float qp,
-    float sinB1,
-    float cosB1
+
+    float sinPhi0,
+    float cosPhi0
 ) {
     int i = get_global_id(0);
 
@@ -25,9 +25,9 @@ __kernel void pl_project_lambert_azimuthal_equal_area_s(
     sinLambda = sincos(lambda, &cosLambda);
     sinPhi = sincos(phi, &cosPhi);
 
-    b = sqrt(2.f / (1.f + sinB1 * sinPhi + cosB1 * cosPhi * cosLambda));
+    b = sqrt(2.f / (1.f + sinPhi0 * sinPhi + cosPhi0 * cosPhi * cosLambda));
     x = b * cosPhi * sinLambda;
-    y = b * (cosB1 * sinPhi - sinB1 * cosPhi * cosLambda);
+    y = b * (cosPhi0 * sinPhi - sinPhi0 * cosPhi * cosLambda);
 
     xy_out[i].even = x0 + scale * x;
     xy_out[i].odd  = y0 + scale * y;
@@ -44,9 +44,9 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_s(
 
     float phi0,
     float lambda0,
-    float qp,
-    float sinB1,
-    float cosB1
+
+    float sinPhi0,
+    float cosPhi0
 ) {
     int i = get_global_id(0);
 
@@ -55,17 +55,14 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_s(
 
     float8 lambda, phi;
 
-    float8 cosZ, cosZ2, rho, sinPhi;
+    float8 rho, sinPhi;
+    float8 sinC, cosC;
 
     rho = hypot(x, y);
+    sinC = sincos(2.f * asin(0.5f * rho), &cosC);
 
-    cosZ2 = cos(asin(0.5f * rho));
-    cosZ = 1.f - 2.f * cosZ2 * cosZ2;
-
-    sinPhi = cosZ * sinB1 + y * cosB1 * cosZ2;
-
-    phi = asin(sinPhi);
-    lambda = atan2(x * cosZ2 * cosB1, cosZ - sinPhi * sinB1);
+    phi = select(asin(cosC * sinPhi0 + y * sinC * cosPhi0 / rho), phi0, rho == 0.f);
+    lambda = atan2(x * sinC, rho * cosPhi0 * cosC - y * sinPhi0 * sinC);
 
     xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
     xy_out[i].odd = degrees(phi);
