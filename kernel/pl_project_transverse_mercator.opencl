@@ -1,6 +1,9 @@
 
-/* See Karney, Transverse Mercator with an accuracy of a few nanometers (2011)
- * https://arxiv.org/pdf/1002.1417.pdf */
+/* See Karney, "Transverse Mercator with an accuracy of a few nanometers"
+ * J. Geodesy 85(8), 475-485 (2011)
+ * https://doi.org/10.1007/s00190-011-0445-3
+ * https://arxiv.org/pdf/1002.1417.pdf
+ */
 
 __kernel void pl_project_transverse_mercator_s (
     __global float16 *xy_in,
