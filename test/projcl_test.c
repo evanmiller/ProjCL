@@ -24,8 +24,8 @@
 #endif
 
 #define TEST_POINTS 200000
-#define DEGREES_TOL 2.5/3600. // two and a half arcseconds (about 60m at the equator)
-#define METERS_TOL 11.0      // eleven meters
+#define DEGREES_TOL 1.0/3600. // one arc-second (about 30m at the equator)
+#define METERS_TOL 10.0       // ten meters in projected cooredinates
 
 #define MIN_LAT -40.0 // shifted up for benefit of conic projections
 #define MAX_LAT 85.0

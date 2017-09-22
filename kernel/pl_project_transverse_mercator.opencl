@@ -200,7 +200,7 @@ __kernel void pl_unproject_transverse_mercator_e (
     tau = tau0 = sinY / hypot(sinhX, cosY);
 
     /* Newton's method (1 iteration) */
-    sigma = sinh(ecc * tanh(ecc * tau / hypot(1.f, tau)));
+    sigma = sinh(ecc * atanh(ecc * tau / hypot(1.f, tau)));
     tauP = tau * hypot(1.f, sigma) - sigma * hypot(1.f, tau);
     dtau = (tau0 - tauP) / hypot(1.f, tauP) * (1.f + one_ecc2 * tau * tau) / (one_ecc2 * hypot(1.f, tau));
     tau += dtau;

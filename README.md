@@ -14,13 +14,18 @@ because OpenCL can utilize all cores and the CPU's vector capabilities.
 
 Most projection routines were originally adapted from Proj.4 code, with
 branches replaced with select() statements and various tweaks implemented along
-the way.
+the way. The library was developed to support real-time map projections in
+[Magic Maps](https://magicmaps.evanmiller.org/).
 
-All of the routines are single-precision, since that gets you about 1m accuracy,
-which is more than what I needed for [Magic
-Maps](https://magicmaps.evanmiller.org/). Double-precision should probably be
-implemented at some point, but that will be painful as OpenCL compilers tend to
-have half-hearted support for double-precision.
+All of the routines are single-precision. In theory, single-precision floats 
+can represent positions on the Earth with about 1m of accuracy. In practice,
+the test suite guarantees 10 meters of accuracy in projected coordinates,
+and one arc-second of accuracy in geodetic coordinates (about 30 meters at
+the Equator). Most routines have been carefully written to avoid round-off
+error, and have at least twice the accuracy that these guarantees imply.
+
+Double-precision should probably be implemented at some point, but it hasn't
+been a priority.
 
 The API differs from Proj.4 in that projections are specified using compile-time
 constants, and parameters are specified using a dedicated data structure.
