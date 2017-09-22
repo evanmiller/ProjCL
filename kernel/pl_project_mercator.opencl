@@ -60,7 +60,7 @@ __kernel void pl_project_mercator_e(
     float8 esinphi = ecc * sin(phi);
 	
 	x = lambda;
-	y = asinh(tan(phi)) + .5f * ecc * (log1p(-esinphi) - log1p(esinphi));
+	y = asinh(tan(phi)) - ecc * atanh(esinphi);
 	
 	xy_out[i].even = x0 + scale * x;
 	xy_out[i].odd  = y0 + scale * y;

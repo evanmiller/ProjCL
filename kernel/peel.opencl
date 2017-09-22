@@ -33,18 +33,17 @@ float4 pl_interpolate_cubic4(float X, float4 A, float4 B, float4 C, float4 D);
 
 float8 pl_qsfn(float8 sinphi, float e, float one_es) {
 	float8 con = e * sinphi;
-	return one_es * (sinphi / (1.f - con * con) - (.5f / e) * (log1p(-con) - log1p(con)));
+	return one_es * (sinphi / (1.f - con * con) + atanh(con) / e);
 }
 
 float8 pl_phi2(float8 log_ts, float e) {
-	float8 eccnth, Phi, con, dphi;
+	float8 Phi, con, dphi;
 	int i;
 	
-	eccnth = .5f * e;
 	Phi = -asin(tanh(log_ts));
 	for (i = I_ITER; i; --i) {
 		con = e * sin(Phi);
-		dphi = -asin(tanh(log_ts + eccnth * (log1p(-con)-log1p(con)))) - Phi;
+		dphi = -asin(tanh(log_ts - e * atanh(con))) - Phi;
 		Phi += dphi;
 		if (all(fabs(dphi) <= ITOL))
 			break;
