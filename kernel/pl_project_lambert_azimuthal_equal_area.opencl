@@ -55,7 +55,7 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_s(
 
     float8 lambda, phi;
 
-    float8 rho, rho2, sinPhi;
+    float8 rho, rho2;
     float8 sinC, cosC;
 
     rho = hypot(x, y);

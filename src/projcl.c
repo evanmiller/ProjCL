@@ -28,7 +28,7 @@
 #define PL_OPENCL_KERNEL_HEADER_FILE "peel.opencl"
 #define PL_OPENCL_KERNEL_FILE_PREFIX "pl_"
 
-#define PL_OPENCL_BUILD_OPTIONS "-cl-finite-math-only -cl-no-signed-zeros -cl-std=CL1.1"
+#define PL_OPENCL_BUILD_OPTIONS "-Werror -cl-std=CL1.1 -cl-finite-math-only -cl-no-signed-zeros"
 
 int check_cl_error(cl_int error, cl_int *outError) {
   if(error != CL_SUCCESS) {

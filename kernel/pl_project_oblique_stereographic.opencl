@@ -96,7 +96,7 @@ __kernel void pl_unproject_oblique_stereographic_e(
 	float8 y = (xy_in[i].odd - y0) / scale;
 	
 	float8 lambda, phi;
-    float8 rho, c;
+    float8 rho;
     float8 sinPhiC, cosPhiC;
 
     rho = hypot(x, y);
