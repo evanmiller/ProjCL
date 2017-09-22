@@ -57,10 +57,9 @@ __kernel void pl_project_mercator_e(
 	float8 phi    = radians(xy_in[i].odd);
 	
 	float8 x, y;
-    float8 esinphi = ecc * sin(phi);
 	
 	x = lambda;
-	y = asinh(tan(phi)) - ecc * atanh(esinphi);
+	y = asinh(tan(phi)) - ecc * atanh(ecc * sin(phi));
 	
 	xy_out[i].even = x0 + scale * x;
 	xy_out[i].odd  = y0 + scale * y;
