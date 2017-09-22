@@ -40,10 +40,10 @@ float8 pl_phi2(float8 log_ts, float e) {
 	float8 Phi, con, dphi;
 	int i;
 	
-	Phi = -asin(tanh(log_ts));
+	Phi = -atan(sinh(log_ts));
 	for (i = I_ITER; i; --i) {
 		con = e * sin(Phi);
-		dphi = -asin(tanh(log_ts - e * atanh(con))) - Phi;
+		dphi = -atan(sinh(log_ts - e * atanh(con))) - Phi;
 		Phi += dphi;
 		if (all(fabs(dphi) <= ITOL))
 			break;
