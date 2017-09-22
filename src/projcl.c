@@ -260,10 +260,15 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
     char error_buf[4*8192];
     clGetProgramBuildInfo(program, pl_ctx->device_id, CL_PROGRAM_BUILD_LOG, sizeof(error_buf), 
             error_buf, &error_len);
+#if PL_DEBUG
     if (error_len > 1)
         printf("%s\n", error_buf);
+#endif
 
 	if (error != CL_SUCCESS) {
+#if !PL_DEBUG
+        printf("%s\n", error_buf);
+#endif
 		printf("Error: Failed to build program executable!\n");
 		
 		if (outError != NULL)
