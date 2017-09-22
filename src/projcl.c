@@ -256,16 +256,16 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
 	
 	error = clBuildProgram(program, 0, NULL, PL_OPENCL_BUILD_OPTIONS, NULL, NULL);
 	
+    size_t error_len;
+    char error_buf[4*8192];
+    clGetProgramBuildInfo(program, pl_ctx->device_id, CL_PROGRAM_BUILD_LOG, sizeof(error_buf), 
+            error_buf, &error_len);
+    if (error_len > 1)
+        printf("%s\n", error_buf);
+
 	if (error != CL_SUCCESS) {
-		size_t error_len;
-		char error_buf[4*8192];
-		
 		printf("Error: Failed to build program executable!\n");
 		
-		clGetProgramBuildInfo(program, pl_ctx->device_id, CL_PROGRAM_BUILD_LOG, sizeof(error_buf), 
-							  error_buf, &error_len);
-		
-		printf("%s\n", error_buf);
 		if (outError != NULL)
 			*outError = error;
 		clReleaseProgram(program);
