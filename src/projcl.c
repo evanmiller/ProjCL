@@ -202,7 +202,7 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
                 continue;
             if (strcmp(name, "pl_project_lambert_azimuthal_equal_area.opencl") == 0 && !(modules & PL_MODULE_LAMBERT_AZIMUTHAL_EQUAL_AREA))
                 continue;
-            if (strcmp(name, "pl_project_lambert_conformal_conice.opencl") == 0 && !(modules & PL_MODULE_LAMBERT_CONFORMAL_CONIC))
+            if (strcmp(name, "pl_project_lambert_conformal_conic.opencl") == 0 && !(modules & PL_MODULE_LAMBERT_CONFORMAL_CONIC))
                 continue;
             if (strcmp(name, "pl_project_mercator.opencl") == 0 && !(modules & PL_MODULE_MERCATOR))
                 continue;
