@@ -22,6 +22,78 @@
 #include <sys/time.h>
 #include <math.h>
 
+typedef struct pl_module_s {
+    char    file[80];
+    int     module;
+} pl_module_t;
+
+static pl_module_t _pl_modules[] = {
+    {
+        .file = "pl_datum.opencl",
+        .module = PL_MODULE_DATUM
+    },
+    {
+        .file = "pl_geodesic.opencl",
+        .module = PL_MODULE_GEODESIC
+    },
+    {
+        .file = "pl_warp.opencl",
+        .module = PL_MODULE_WARP
+    },
+    {
+        .file = "pl_sample_nearest.opencl",
+        .module = PL_MODULE_NEAREST_NEIGHBOR
+    },
+    {
+        .file = "pl_sample_linear.opencl",
+        .module = PL_MODULE_BILINEAR
+    },
+    {
+        .file = "pl_sample_bicubic.opencl",
+        .module = PL_MODULE_BICUBIC
+    },
+    {
+        .file = "pl_sample_quasi_bicubic.opencl",
+        .module = PL_MODULE_QUASI_BICUBIC
+    },
+    {
+        .file = "pl_project_albers_equal_area.opencl",
+        .module = PL_MODULE_ALBERS_EQUAL_AREA
+    },
+    {
+        .file = "pl_project_american_polyconic.opencl",
+        .module = PL_MODULE_AMERICAN_POLYCONIC
+    },
+    {
+        .file = "pl_project_lambert_azimuthal_equal_area.opencl",
+        .module = PL_MODULE_LAMBERT_AZIMUTHAL_EQUAL_AREA
+    },
+    {
+        .file = "pl_project_lambert_conformal_conic.opencl",
+        .module = PL_MODULE_LAMBERT_CONFORMAL_CONIC
+    },
+    {
+        .file = "pl_project_mercator.opencl",
+        .module = PL_MODULE_MERCATOR
+    },
+    {
+        .file = "pl_project_oblique_stereographic.opencl",
+        .module = PL_MODULE_OBLIQUE_STEREOGRAPHIC
+    },
+    {
+        .file = "pl_project_robinson.opencl",
+        .module = PL_MODULE_ROBINSON
+    },
+    {
+        .file = "pl_project_transverse_mercator.opencl",
+        .module = PL_MODULE_TRANSVERSE_MERCATOR
+    },
+    {
+        .file = "pl_project_winkel_tripel.opencl",
+        .module = PL_MODULE_WINKEL_TRIPEL
+    }
+};
+
 #define PL_DEBUG 0
 
 #define PL_OPENCL_FILE_EXTENSION ".opencl"
@@ -182,37 +254,15 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
 		if (len > sizeof(PL_OPENCL_FILE_EXTENSION)-1 
             && strncasecmp(name, PL_OPENCL_KERNEL_FILE_PREFIX, sizeof(PL_OPENCL_KERNEL_FILE_PREFIX) - 1) == 0
             && strcasecmp(name + len - (sizeof(PL_OPENCL_FILE_EXTENSION)-1), PL_OPENCL_FILE_EXTENSION) == 0) {
-            if (strcmp(name, "pl_datum.opencl") == 0 && !(modules & PL_MODULE_DATUM))
-                continue;
-            if (strcmp(name, "pl_geodesic.opencl") == 0 && !(modules & PL_MODULE_GEODESIC))
-                continue;
-            if (strcmp(name, "pl_warp.opencl") == 0 && !(modules & PL_MODULE_WARP))
-                continue;
-            if (strcmp(name, "pl_sample_nearest.opencl") == 0 && !(modules & PL_MODULE_NEAREST_NEIGHBOR))
-                continue;
-            if (strcmp(name, "pl_sample_linear.opencl") == 0 && !(modules & PL_MODULE_BILINEAR))
-                continue;
-            if (strcmp(name, "pl_sample_bicubic.opencl") == 0 && !(modules & PL_MODULE_BICUBIC))
-                continue;
-            if (strcmp(name, "pl_sample_quasi_bicubic.opencl") == 0 && !(modules & PL_MODULE_QUASI_BICUBIC))
-                continue;
-            if (strcmp(name, "pl_project_albers_equal_area.opencl") == 0 && !(modules & PL_MODULE_ALBERS_EQUAL_AREA))
-                continue;
-            if (strcmp(name, "pl_project_american_polyconic.opencl") == 0 && !(modules & PL_MODULE_AMERICAN_POLYCONIC))
-                continue;
-            if (strcmp(name, "pl_project_lambert_azimuthal_equal_area.opencl") == 0 && !(modules & PL_MODULE_LAMBERT_AZIMUTHAL_EQUAL_AREA))
-                continue;
-            if (strcmp(name, "pl_project_lambert_conformal_conic.opencl") == 0 && !(modules & PL_MODULE_LAMBERT_CONFORMAL_CONIC))
-                continue;
-            if (strcmp(name, "pl_project_mercator.opencl") == 0 && !(modules & PL_MODULE_MERCATOR))
-                continue;
-            if (strcmp(name, "pl_project_oblique_stereographic.opencl") == 0 && !(modules & PL_MODULE_OBLIQUE_STEREOGRAPHIC))
-                continue;
-            if (strcmp(name, "pl_project_robinson.opencl") == 0 && !(modules & PL_MODULE_ROBINSON))
-                continue;
-            if (strcmp(name, "pl_project_transverse_mercator.opencl") == 0 && !(modules & PL_MODULE_TRANSVERSE_MERCATOR))
-                continue;
-            if (strcmp(name, "pl_project_winkel_tripel.opencl") == 0 && !(modules & PL_MODULE_WINKEL_TRIPEL))
+            int i;
+            int compile = 0;
+            for (i=0; i<sizeof(_pl_modules)/sizeof(_pl_modules[0]); i++) {
+                if (strcmp(name, _pl_modules[i].file) == 0) {
+                    compile = !!(modules & _pl_modules[i].module);
+                    break;
+                }
+            }
+            if (!compile)
                 continue;
 
             if (strlen(path) + strlen(name) + 2 < sizeof(filename)) {
