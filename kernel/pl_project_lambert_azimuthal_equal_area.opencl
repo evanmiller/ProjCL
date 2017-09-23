@@ -55,17 +55,16 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_s(
 
     float8 lambda, phi;
 
-    float8 rho, rho2;
+    float8 rho2;
     float8 sinC, cosC;
 
-    rho = hypot(x, y);
     rho2 = x*x + y*y;
 
     cosC = 1.f - 0.5f * rho2;
-    sinC = rho * sqrt(1.f - 0.25f * rho2);
+    sinC = sqrt(1.f - 0.25f * rho2); // actually, sin(c) / rho
 
-    phi = select(asin(cosC * sinPhi0 + y * sinC * cosPhi0 / rho), phi0, rho == 0.f);
-    lambda = atan2(x * sinC, rho * cosPhi0 * cosC - y * sinPhi0 * sinC);
+    phi = asin(cosC * sinPhi0 + y * sinC * cosPhi0);
+    lambda = atan2(x * sinC, cosPhi0 * cosC - y * sinPhi0 * sinC);
 
     xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
     xy_out[i].odd = degrees(phi);
@@ -154,20 +153,19 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_e(
 
     float8 lambda, phi;
 
-    float8 cosCe, sinCe, rho, rho2, beta;
+    float8 cosCe, sinCe, rho2, beta;
         
     x /= dd;
     y *= dd;
 
-    rho = hypot(x, y);
     rho2 = (x*x + y*y) / rq / rq;
 
     cosCe = 1.f - 0.5f * rho2;
-    sinCe = rho * sqrt(1.f - 0.25f * rho2) / rq;
+    sinCe = sqrt(1.f - 0.25f * rho2) / rq; // rather, sin(Ce) / rho
 
-    beta = asin(cosCe * sinB1 + y * sinCe * cosB1 / rho);
+    beta = asin(cosCe * sinB1 + y * sinCe * cosB1);
 
-    lambda = atan2(x * sinCe, rho * cosB1 * cosCe - y * sinB1 * sinCe);
+    lambda = atan2(x * sinCe, cosB1 * cosCe - y * sinB1 * sinCe);
     
     phi = (beta + apa.s0 * sin(2.f * beta) + apa.s1 * sin(4.f * beta) + apa.s2 * sin(6.f * beta));
      
