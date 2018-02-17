@@ -329,10 +329,10 @@ cl_int pl_enqueue_kernel_albers_equal_area(PLContext *pl_ctx, cl_kernel kernel,
 	
 	if (_pl_spheroid_is_spherical(params->spheroid)) {
 		if (secant) {
-			n = .5 * (n + sin(phi2));
+			n = .5 * (sinphi + sin(phi2));
 		}
-		c = cosphi * cosphi / n + 2 * sinphi;
-		rho0 = sqrt((c - 2 * sin(phi0))/n);
+		c = 1.f + sin(phi2) * sinphi;
+        rho0 = sqrt(c - 2.f * n * sinphi) / n;
 	} else {
 		double ml1, m1;
 		
@@ -348,8 +348,8 @@ cl_int pl_enqueue_kernel_albers_equal_area(PLContext *pl_ctx, cl_kernel kernel,
 			n = (m1 * m1 - m2 * m2) / (ml2 - ml1);
 		}
         
-		c = m1 * m1 / n + ml1;
-		rho0 = sqrt((c - _pl_qsfn(sin(phi0), info.ecc, info.one_ecc2))/n);
+		c = m1 * m1 + ml1 * n;
+		rho0 = sqrt(c - n * _pl_qsfn(sin(phi0), info.ecc, info.one_ecc2))/n;
 	}
 	
 	if (!_pl_spheroid_is_spherical(params->spheroid)) {
