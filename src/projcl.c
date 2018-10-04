@@ -327,30 +327,14 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
 		return NULL;
 	}
 	
-	size_t binary_length;
-	clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t), &binary_length, NULL);
-	
-	u_char *binary;
-	if ((binary = malloc(binary_length)) == NULL) {
-		clReleaseProgram(program);
-		if (outError != NULL)
-			*outError = CL_OUT_OF_HOST_MEMORY;
-		return NULL;
-	}
-	clGetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof(u_char *), &binary, NULL);
-	
-	clReleaseProgram(program);
-	
 	PLCode *pl_code;
 	if ((pl_code = malloc(sizeof(PLCode))) == NULL) {
-		free(binary);
 		if (outError != NULL)
 			*outError = CL_OUT_OF_HOST_MEMORY;
 		return NULL;
 	}
 	
-	pl_code->binary = binary;
-	pl_code->len = binary_length;
+	pl_code->program = program;
 	pl_code->kernel_count = kernel_count;
     
     if (outError)
@@ -365,42 +349,21 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
 }
 
 cl_int pl_load_code(PLContext *pl_ctx, PLCode *pl_code) {
-	cl_program program;
 	cl_int error;
-	cl_int binary_status;
 
     struct timeval start_time, end_time;
     
     pl_ctx->last_time = NAN;
     gettimeofday(&start_time, NULL);
 	
-	program = clCreateProgramWithBinary(pl_ctx->ctx, 1, 
-										(const cl_device_id *)&pl_ctx->device_id, 
-										(const size_t *)&pl_code->len, 
-										(const u_char **)&pl_code->binary, 
-										&binary_status, &error);
-	if (error != CL_SUCCESS) {
-		return error;
-	}
-	
-	error = clBuildProgram(program, 0, NULL, PL_OPENCL_BUILD_OPTIONS, NULL, NULL);
-	
-	if (error != CL_SUCCESS) {
-		clReleaseProgram(program);
-		return error;
-	}
-	
 	cl_uint kernel_count_ret;
 	
 	cl_kernel *kernels;
 	if ((kernels = malloc(sizeof(cl_kernel) * pl_code->kernel_count)) == NULL) {
-		clReleaseProgram(program);
 		return CL_OUT_OF_HOST_MEMORY;
 	}
 	
-	error = clCreateKernelsInProgram(program, pl_code->kernel_count, kernels, &kernel_count_ret);
-	
-	clReleaseProgram(program);
+	error = clCreateKernelsInProgram(pl_code->program, pl_code->kernel_count, kernels, &kernel_count_ret);
 	
 	if (error != CL_SUCCESS) {
 		free(kernels);
@@ -432,7 +395,7 @@ void pl_unload_code(PLContext *pl_ctx) {
 void pl_release_code(PLCode *pl_code) {
     if (!pl_code)
         return;
-    if (pl_code->binary)
-        free(pl_code->binary);
+    if (pl_code->program)
+        clReleaseProgram(pl_code->program);
     free(pl_code);
 }

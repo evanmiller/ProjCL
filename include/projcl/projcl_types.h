@@ -88,8 +88,7 @@ struct pl_spheroid_info_s {
 #define PL_MODULE_PROJECTION                    (0xFFFF - 7)
 
 typedef struct PLCode_s {
-	unsigned char		*binary;
-	size_t	     len;
+    cl_program   program;
 	cl_uint      kernel_count;
 } PLCode;
 
