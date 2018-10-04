@@ -11,6 +11,7 @@
 #define ck_padding(n, size) (((n)+(size)-1)/(size)*(size))
 
 typedef enum PLDatum {
+    PL_DATUM_NONE = -1,
     PL_DATUM_WGS_84,
     PL_DATUM_WGS_72,
     PL_DATUM_ED_50,
