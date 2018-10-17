@@ -321,24 +321,19 @@ cl_int pl_enqueue_kernel_albers_equal_area(PLContext *pl_ctx, cl_kernel kernel,
 	double c, n;
     double sinphi, cosphi;
 	
-	int secant; /* secant cone */
-	
 	n = sinphi = sin(phi1);
 	cosphi = cos(phi1);
-	secant = fabs(phi1 - phi2) >= EPS7;
 	
 	if (_pl_spheroid_is_spherical(params->spheroid)) {
-		if (secant) {
-			n = .5 * (sinphi + sin(phi2));
-		}
-		c = 1.f + sin(phi2) * sinphi;
-        rho0 = sqrt(c - 2.f * n * sinphi) / n;
+        n = .5 * (sinphi + sin(phi2));
+		c = cosphi * cosphi + 2.f * n * sinphi;
+        rho0 = sqrt(c - 2.f * n * sin(phi0)) / n;
 	} else {
 		double ml1, m1;
 		
 		m1 = _pl_msfn(sinphi, cosphi, info.ecc2);
 		ml1 = _pl_qsfn(sinphi, info.ecc, info.one_ecc2);
-		if (secant) { 
+		if (fabs(phi1 - phi2) >= EPS7) {
 			double ml2, m2;
 			
 			sinphi = sin(phi2);
