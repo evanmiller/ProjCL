@@ -9,6 +9,8 @@
 
 cl_int pl_read_buffer(cl_command_queue queue, cl_mem xy_out_buf, float *xy_out, size_t out_count);
 
+cl_int pl_read_buffer_2(cl_command_queue queue, cl_mem xy_out_buf, float *x_out, float *y_out, size_t out_count);
+
 cl_int pl_enqueue_projection_kernel_points(PLContext *pl_ctx, cl_kernel kernel,
         PLProjection proj, PLProjectionParams *params, PLProjectionBuffer *pl_buf);
 cl_int pl_enqueue_projection_kernel_grid(PLContext *pl_ctx, cl_kernel kernel,

@@ -33,6 +33,8 @@
 #define MIN_LON -60.0 // kind of tight for benefit of transverse mercator
 #define MAX_LON 60.0
 
+#define TEST_2_INTERFACE 1
+
 typedef struct test_params_s {
   char   name[80];
   int    ell;
@@ -441,6 +443,31 @@ int main(int argc, char **argv) {
         printf("Failed to load points: %d\n", error);
         return 1;
     }
+#if TEST_2_INTERFACE
+    float *orig_points_X =  malloc(TEST_POINTS*sizeof(float));
+    float *orig_points_Y =  malloc(TEST_POINTS*sizeof(float));
+
+    offset = 0;
+    for(i=0; i<TEST_POINTS;i++) {
+      orig_points_X[i] = orig_points[offset++];
+      orig_points_Y[i] = orig_points[offset++];
+    }
+    PLProjectionBuffer *orig_buf_2 =  NULL;
+    orig_buf_2 = pl_load_projection_data_2(ctx, orig_points_X, orig_points_Y, TEST_POINTS, &error);
+
+    if (orig_buf_2 == NULL) {
+        printf("Failed to load points for _2: %d\n", error);
+        return 1;
+    }
+    char *error_message = NULL;
+    int fail_count = pl_compare_projection_buffers(ctx, orig_buf, orig_buf_2, &error_message);
+    if (fail_count != 0) {
+      printf("Comparison of projection buffers failed:\n");
+      printf("%s - result is %d\n", error_message, fail_count);
+      return 1;
+    }
+    
+#endif
 
     uint64_t test_failures = 0;
 
@@ -450,12 +477,21 @@ int main(int argc, char **argv) {
         printf("\nTesting consistency of %s\n", group->label);
 
         test_failures += run_test_group(group, ctx, orig_buf, orig_points);
+#if TEST_2_INTERFACE
+	printf("\nTesting again with X/Y interface...\n");
+	test_failures += run_test_group(group, ctx, orig_buf_2, orig_points);
+#endif
     }
 
     printf("\nTotal consistency failures: %" PRId64 "\n", test_failures & 0xFFFFFFFF);
     printf("Total Proj.4 mismatches: %" PRId64 "\n", test_failures >> 32);
 
     pl_unload_projection_data(orig_buf);
+#if TEST_2_INTERFACE
+    pl_unload_projection_data(orig_buf_2);
+    free(orig_points_X);
+    free(orig_points_Y);
+#endif
 
     pl_unload_code(ctx);
     pl_context_free(ctx);
@@ -597,6 +633,10 @@ uint64_t run_test_group(test_group_t *group, PLContext *ctx, PLProjectionBuffer 
     uint64_t consistency_failures = 0, proj4_mismatches = 0;
     PLProjectionBuffer *proj_buf = NULL;
     float proj_points[2*TEST_POINTS];
+#if TEST_2_INTERFACE
+    float *proj_pointsX = malloc(TEST_POINTS * sizeof(float));
+    float *proj_pointsY = malloc(TEST_POINTS * sizeof(float));
+#endif
     float orig_points2[2*TEST_POINTS];
     int i;
     char orig_string[80];
@@ -623,6 +663,37 @@ uint64_t run_test_group(test_group_t *group, PLContext *ctx, PLProjectionBuffer 
             fwd_secs = NAN;
         }
 
+#if TEST_2_INTERFACE
+	// Now the x/y way
+	error = pl_project_points_forward_2(ctx, group->proj, params, orig_buf, proj_pointsX, proj_pointsY);
+        if (error == CL_SUCCESS) {
+	  //fwd_secs = ctx->last_time;
+        } else {
+            printf("** Error Projecting X/Y: %d **\n", error);
+            //fwd_secs = NAN;
+        }
+	// Compare output buffers - normal interleaved should match X/Y
+	// (including NaNs...)
+	int ii;
+	int failcount = 0;
+	for(ii=0; ii< TEST_POINTS; ii++) {
+	  if(proj_points[2*ii] != proj_pointsX[ii]
+	     && !(isnan(proj_points[2*ii]) && isnan(proj_pointsX[ii]))) {
+	    printf("X[%d] mismatch - %f versus %f\n",
+		   ii, proj_points[2*ii],  proj_pointsX[ii]);
+	    ++failcount;
+	  }
+	  if(proj_points[2*ii+1] != proj_pointsY[ii]
+	     && !(isnan(proj_points[2*ii+1]) && isnan(proj_pointsY[ii]))) {
+	    printf("Y[%d] mismatch - %f versus %f\n",
+		   ii, proj_points[2*ii],  proj_pointsX[ii]);
+	    ++failcount;
+	  }
+	}
+	printf("Count of mismatches between normal and _2 outputs: %d\n",
+	       failcount);
+#endif
+	
         proj_buf = pl_load_projection_data(ctx, proj_points, TEST_POINTS, 1, &error);
 
         error = pl_project_points_reverse(ctx, group->proj, params, proj_buf, orig_points2);
@@ -646,6 +717,11 @@ uint64_t run_test_group(test_group_t *group, PLContext *ctx, PLProjectionBuffer 
         proj4_mismatches += compare_proj4_inv(proj_points, orig_points2,
                 proj_string, orig_string, inv_secs);
     }
+
+#if TEST_2_INTERFACE
+    free(proj_pointsY);
+    free(proj_pointsX);
+#endif
 
     return consistency_failures + (proj4_mismatches << 32);
 }

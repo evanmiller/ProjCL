@@ -180,6 +180,68 @@ cl_int pl_read_buffer(cl_command_queue queue, cl_mem xy_out_buf, float *xy_out, 
 	return CL_SUCCESS;
 }
 
+cl_int pl_read_buffer_2(cl_command_queue queue, cl_mem xy_out_buf, float *x_out, float *y_out, size_t out_count_bytes) {
+    cl_int error;
+    // out_count_bytes is in bytes, but clEnqueueReadBufferRect counts stuff in
+    // actual array elements, so...
+    size_t out_count = out_count_bytes / sizeof(float);
+
+	size_t buffer_origin[3] = {0,0,0};
+	size_t host_origin[3] = {0,0,0};
+	size_t bh_region[3] = {sizeof(float), out_count/2, 1};
+	// First, the x's
+	error = clEnqueueReadBufferRect(queue,
+					xy_out_buf,
+					CL_TRUE,  // non-blocking
+					buffer_origin,
+					host_origin,
+					bh_region,
+					2*sizeof(float), // buffer_row_pitch,
+					0,               // buffer_slice_pitch,
+					1*sizeof(float), // host_row_pitch,
+					0,               // host_slice_pitch,
+					x_out,
+					0,     // num_events_in_wait_list,
+					NULL,  // event_wait_list,
+					NULL   // event
+					);
+	if (error != CL_SUCCESS)
+		return error;
+	
+	// Just to be paranoid, do this operation befor queueing the next
+	// one...
+	error = clFinish(queue);
+	if (error != CL_SUCCESS)
+		return error;
+
+	// Then, the y's, which are like the x's with minor offsets
+	buffer_origin[0] = 1 * sizeof(float);
+	error = clEnqueueReadBufferRect(queue,
+					xy_out_buf,
+					CL_TRUE,  // non-blocking
+					buffer_origin,
+					host_origin,
+					bh_region,
+					2*sizeof(float), // buffer_row_pitch,
+					0,               // buffer_slice_pitch,
+					1*sizeof(float), // host_row_pitch,
+					0,               // host_slice_pitch,
+					y_out,
+					0,     // num_events_in_wait_list,
+					NULL,  // event_wait_list,
+					NULL   // event
+					);
+
+	if (error != CL_SUCCESS)
+		return error;
+	
+	error = clFinish(queue);
+	if (error != CL_SUCCESS)
+		return error;
+	
+	return CL_SUCCESS;
+}
+
 static cl_int _pl_enqueue_projection_kernel(PLContext *pl_ctx, cl_kernel kernel, PLProjection proj, PLProjectionParams *params,
         cl_mem xy_in, cl_mem xy_out, size_t count) {
     cl_int error = CL_SUCCESS;

@@ -22,7 +22,7 @@
 #include <sys/time.h>
 #include <math.h>
 
-#define PL_DEBUG 0
+#define PL_DEBUG 1
 
 #define PL_OPENCL_FILE_EXTENSION ".opencl"
 #define PL_OPENCL_KERNEL_HEADER_FILE "peel.opencl"
@@ -88,6 +88,20 @@ PLContext *pl_context_init(cl_device_type type, cl_int *outError) {
     printf("-- Compute units: %d\n", size);
     clGetDeviceInfo(device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(long), &lsize, NULL);
     printf("-- Work group size: %ld\n", lsize);
+
+    cl_uint vector_width;
+    clGetDeviceInfo(device_id, CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR, sizeof(cl_uint), &vector_width, NULL);
+    printf("-- Preferred vector width - CHAR:   %u\n", vector_width);
+    clGetDeviceInfo(device_id, CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT, sizeof(cl_uint), &vector_width, NULL);
+    printf("-- Preferred vector width - SHORT:  %u\n", vector_width);
+    clGetDeviceInfo(device_id, CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT, sizeof(cl_uint), &vector_width, NULL);
+    printf("-- Preferred vector width - INT:    %u\n", vector_width);
+    clGetDeviceInfo(device_id, CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG, sizeof(cl_uint), &vector_width, NULL);
+    printf("-- Preferred vector width - LONG:   %u\n", vector_width);
+    clGetDeviceInfo(device_id, CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT, sizeof(cl_uint), &vector_width, NULL);
+    printf("-- Preferred vector width - FLOAT:  %u\n", vector_width);
+    clGetDeviceInfo(device_id, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE, sizeof(cl_uint), &vector_width, NULL);
+    printf("-- Preferred vector width - DOUBLE: %u\n", vector_width);
     clGetDeviceInfo(device_id, CL_DEVICE_IMAGE2D_MAX_WIDTH, sizeof(long), &lsize, NULL);
     printf("-- Max 2D image width: %ld\n", lsize);
     clGetDeviceInfo(device_id, CL_DEVICE_IMAGE2D_MAX_HEIGHT, sizeof(long), &lsize, NULL);

@@ -38,7 +38,9 @@ cl_int pl_shift_datum(PLContext *pl_ctx, PLDatum src_datum, PLDatum dst_datum, P
 
 
 PLProjectionBuffer *pl_load_projection_data(PLContext *pl_ctx, const float *xy, int n, int copy, int *outError);
+PLProjectionBuffer *pl_load_projection_data_2(PLContext *pl_ctx, const float *x, const float *y, int n, int *outError);
 void pl_unload_projection_data(PLProjectionBuffer *pl_buf);
+cl_int pl_compare_projection_buffers(PLContext *pl_ctx, PLProjectionBuffer *pl_buf_1, PLProjectionBuffer *pl_buf_2, char **error_string);
 
 
 PLProjectionParams *pl_params_init();
@@ -59,7 +61,11 @@ cl_int pl_project_points_forward(PLContext *pl_ctx, PLProjection proj, PLProject
         PLProjectionBuffer *pl_buf, float *xy_out);
 cl_int pl_project_points_reverse(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
         PLProjectionBuffer *pl_buf, float *xy_out);
-
+// And the X/Y interface
+cl_int pl_project_points_forward_2(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
+	PLProjectionBuffer *pl_buf, float *x_out, float *y_out);
+cl_int pl_project_points_reverse_2(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
+	PLProjectionBuffer *pl_buf, float *x_out, float *y_out);
 
 PLForwardGeodesicFixedDistanceBuffer *pl_load_forward_geodesic_fixed_distance_data(PLContext *pl_ctx,
     const float *xy_in, int xy_count, const float *az_in, int az_count, cl_int *outError);
