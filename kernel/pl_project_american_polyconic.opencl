@@ -1,3 +1,22 @@
+
+float8 pl_mlfn(float8 phi, float8 sphi, float8 cphi, float8 en);
+float8 pl_mlfn1(float8 phi, float8 sphi, float8 cphi, float8 en);
+
+float8 pl_mlfn(float8 phi, float8 sphi, float8 cphi, float8 en) {
+	cphi *= sphi;
+	sphi *= sphi;
+	return(en.s0 * phi - cphi * (en.s1 + sphi*(en.s2 + sphi*(en.s3 + sphi*en.s4))));
+}
+
+/* first derivative */
+float8 pl_mlfn1(float8 phi, float8 sphi, float8 cphi, float8 en) {
+    cphi *= cphi;
+    sphi *= sphi;
+    return en.s0 - (en.s1*(cphi-sphi) + sphi*(en.s2*(3*cphi-sphi) 
+                    + sphi*(en.s3*(5*cphi-sphi) + sphi*(en.s4*(7*cphi-sphi)))));
+}
+
+
 __kernel void pl_project_american_polyconic_s(
 	__global float16 *xy_in,
 	__global float16 *xy_out,
@@ -155,7 +174,7 @@ __kernel void pl_unproject_american_polyconic_e(
     float8 dLam, dPhi, invDet;
     float8 f1, f2, df1phi, df2phi, df1lam, df2lam;
 	
-    int iter = AMERICAN_POLYCONIC_N_ITER + 1; // seems to require more than spherical case... maybe a bug?
+    int iter = AMERICAN_POLYCONIC_N_ITER + 2; // seems to require more than spherical case... maybe a bug?
 
     phi = y + phi0;
     // 1 iteration of Newton's method to fix initial guess

@@ -1,6 +1,6 @@
 
 #define V(C,z) (C.s0 + z * (C.s1 + z * (C.s2 + z * C.s3)))
-#define DV(C,z) (C.s1 + z * (C.s2 + C.s2 + z * 3. * C.s3))
+#define DV(C,z) (C.s1 + z * (C.s2 + C.s2 + z * 3.f * C.s3))
 /* note: following terms based upon 5 deg. intervals in degrees. */
 /* Source: http://article.gmane.org/gmane.comp.gis.proj-4.devel/6039 */
 __constant float4 ROBINSON_X[] = {

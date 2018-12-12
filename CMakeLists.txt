@@ -130,7 +130,7 @@ else()
   # Recommended C++ compilation flags
   # -Weffc++
   set(PROJCL_COMMON_CXX_FLAGS
-	  "-Wextra -Wall -Wno-unused-parameter -Wno-unused-variable -Wpointer-arith -Wcast-align -Wcast-qual -Wfloat-equal -Wredundant-decls -Wno-long-long -fPIC")
+      "-Wextra -Wall -Wno-unused-parameter -Wno-unused-variable -Wpointer-arith -Wcast-align -Wcast-qual -Wfloat-equal -Wredundant-decls -Wno-long-long -fPIC")
 
   if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
 
@@ -162,11 +162,13 @@ endif(APPLE)
 set(WITH_PROJ FALSE CACHE BOOL "Choose if Proj support should be built")
 set(PROJCL_LIBRARY projcl)
 
+if (WITH_PROJ)
 find_package(Proj4 4.8.0)
 if (PROJ4_FOUND)
 	set(PROJCL_HAVE_PROJ 1)
 	add_definitions(-DHAVE_PROJ4)
 endif (PROJ4_FOUND)	
+endif (WITH_PROJ)
 
 find_package(OpenCL)
 

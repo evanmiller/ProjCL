@@ -24,11 +24,11 @@
 #endif
 
 #define TEST_POINTS 200000
-#define DEGREES_TOL 2.5/3600. // two and a half arcseconds (about 60m at the equator)
-#define METERS_TOL 11.0      // eleven meters
+#define DEGREES_TOL 1.0/3600. // one arc-second (about 30m at the equator)
+#define METERS_TOL 10.0       // ten meters in projected cooredinates
 
 #define MIN_LAT -40.0 // shifted up for benefit of conic projections
-#define MAX_LAT 85.0
+#define MAX_LAT 80.0
 
 #define MIN_LON -60.0 // kind of tight for benefit of transverse mercator
 #define MAX_LON 60.0
@@ -64,6 +64,13 @@ test_group_t _test_groups[] = {
                 .rlat1 = 30.0,
                 .rlat2 = 60.0 },
 
+            { .name = "Spherical, centered, down under", 
+                .ell = PL_SPHEROID_SPHERE, 
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = -30.0,
+                .rlat2 = -60.0 },
+
             { .name = "Spherical, off-center",
                 .ell = PL_SPHEROID_SPHERE,
                 .lon0 = 10.0,
@@ -77,6 +84,13 @@ test_group_t _test_groups[] = {
                 .lat0 = 0.0,
                 .rlat1 = 30.0,
                 .rlat2 = 60.0 },
+
+            { .name = "Ellipsoidal, centered, down under", 
+                .ell = PL_SPHEROID_WGS_84, 
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = -30.0,
+                .rlat2 = -60.0 },
 
             { .name = "Ellipsoidal, off-center",
                 .ell = PL_SPHEROID_WGS_84,
@@ -159,6 +173,12 @@ test_group_t _test_groups[] = {
                 .lat0 = 0.0,
                 .rlat1 = 30.0,
                 .rlat2 = 60.0 },
+            { .name = "Spherical, centered, down under",
+                .ell = PL_SPHEROID_SPHERE,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = -30.0,
+                .rlat2 = -60.0 },
             { .name = "Spherical, off-center",
                 .ell = PL_SPHEROID_SPHERE,
                 .lon0 = 10.0,
@@ -179,6 +199,12 @@ test_group_t _test_groups[] = {
                 .lat0 = 0.0,
                 .rlat1 = 30.0,
                 .rlat2 = 60.0 },
+            { .name = "Ellipsoidal, centered, down under",
+                .ell = PL_SPHEROID_WGS_84,
+                .lon0 = 0.0,
+                .lat0 = 0.0,
+                .rlat1 = -30.0,
+                .rlat2 = -60.0 },
             { .name = "Ellipsoidal, off-center",
                 .ell = PL_SPHEROID_WGS_84,
                 .lon0 = 10.0,

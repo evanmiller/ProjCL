@@ -10,9 +10,9 @@ __kernel void pl_project_lambert_azimuthal_equal_area_s(
 
     float phi0,
     float lambda0,
-    float qp,
-    float sinB1,
-    float cosB1
+
+    float sinPhi0,
+    float cosPhi0
 ) {
     int i = get_global_id(0);
 
@@ -25,9 +25,9 @@ __kernel void pl_project_lambert_azimuthal_equal_area_s(
     sinLambda = sincos(lambda, &cosLambda);
     sinPhi = sincos(phi, &cosPhi);
 
-    b = sqrt(2.f / (1.f + sinB1 * sinPhi + cosB1 * cosPhi * cosLambda));
+    b = sqrt(2.f / (1.f + sinPhi0 * sinPhi + cosPhi0 * cosPhi * cosLambda));
     x = b * cosPhi * sinLambda;
-    y = b * (cosB1 * sinPhi - sinB1 * cosPhi * cosLambda);
+    y = b * (cosPhi0 * sinPhi - sinPhi0 * cosPhi * cosLambda);
 
     xy_out[i].even = x0 + scale * x;
     xy_out[i].odd  = y0 + scale * y;
@@ -44,9 +44,9 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_s(
 
     float phi0,
     float lambda0,
-    float qp,
-    float sinB1,
-    float cosB1
+
+    float sinPhi0,
+    float cosPhi0
 ) {
     int i = get_global_id(0);
 
@@ -55,20 +55,16 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_s(
 
     float8 lambda, phi;
 
-    float8 sinZ, cosZ, rho;
+    float8 rho2;
+    float8 sinC, cosC;
 
-    rho = hypot(x, y);
-    phi = 2.f * asin(0.5f * rho);
+    rho2 = x*x + y*y;
 
-    sinZ = sincos(phi, &cosZ);
+    cosC = 1.f - 0.5f * rho2;
+    sinC = sqrt(1.f - 0.25f * rho2); // actually, sin(c) / rho
 
-    phi = select(asin(cosZ * sinB1 + y * sinZ * cosB1 / rho), 
-            phi0, fabs(rho) <= EPS7);
-
-    x *= sinZ * cosB1;
-    y = (cosZ - sin(phi) * sinB1) * rho;
-
-    lambda = select(atan2(x, y), 0.f, y == 0.f);
+    phi = asin(cosC * sinPhi0 + y * sinC * cosPhi0);
+    lambda = atan2(x * sinC, cosPhi0 * cosC - y * sinPhi0 * sinC);
 
     xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
     xy_out[i].odd = degrees(phi);
@@ -157,18 +153,19 @@ __kernel void pl_unproject_lambert_azimuthal_equal_area_e(
 
     float8 lambda, phi;
 
-    float8 cCe, sCe, rho, beta;
+    float8 cosCe, sinCe, rho2, beta;
         
     x /= dd;
     y *= dd;
 
-    rho = hypot(x, y);
-    sCe = sincos(2.f * asin(0.5f * rho / rq), &cCe);
-    x *= sCe;
-    beta = asin(cCe * sinB1 + y * sCe * cosB1 / rho);
-    y = rho * cosB1 * cCe - y * sinB1 * sCe;
+    rho2 = (x*x + y*y) / rq / rq;
 
-    lambda = atan2(x, y);    
+    cosCe = 1.f - 0.5f * rho2;
+    sinCe = sqrt(1.f - 0.25f * rho2) / rq; // rather, sin(Ce) / rho
+
+    beta = asin(cosCe * sinB1 + y * sinCe * cosB1);
+
+    lambda = atan2(x * sinCe, cosB1 * cosCe - y * sinB1 * sinCe);
     
     phi = (beta + apa.s0 * sin(2.f * beta) + apa.s1 * sin(4.f * beta) + apa.s2 * sin(6.f * beta));
      

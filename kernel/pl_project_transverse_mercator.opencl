@@ -1,6 +1,9 @@
 
-/* See Karney, Transverse Mercator with an accuracy of a few nanometers (2011)
- * https://arxiv.org/pdf/1002.1417.pdf */
+/* See Karney, "Transverse Mercator with an accuracy of a few nanometers"
+ * J. Geodesy 85(8), 475-485 (2011)
+ * https://doi.org/10.1007/s00190-011-0445-3
+ * https://arxiv.org/pdf/1002.1417.pdf
+ */
 
 __kernel void pl_project_transverse_mercator_s (
     __global float16 *xy_in,
@@ -200,7 +203,7 @@ __kernel void pl_unproject_transverse_mercator_e (
     tau = tau0 = sinY / hypot(sinhX, cosY);
 
     /* Newton's method (1 iteration) */
-    sigma = sinh(ecc * tanh(ecc * tau / hypot(1.f, tau)));
+    sigma = sinh(ecc * atanh(ecc * tau / hypot(1.f, tau)));
     tauP = tau * hypot(1.f, sigma) - sigma * hypot(1.f, tau);
     dtau = (tau0 - tauP) / hypot(1.f, tauP) * (1.f + one_ecc2 * tau * tau) / (one_ecc2 * hypot(1.f, tau));
     tau += dtau;

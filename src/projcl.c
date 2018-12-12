@@ -22,11 +22,85 @@
 #include <sys/time.h>
 #include <math.h>
 
-#define PL_DEBUG 1
+typedef struct pl_module_s {
+    char    file[80];
+    int     module;
+} pl_module_t;
+
+static pl_module_t _pl_modules[] = {
+    {
+        .file = "pl_datum.opencl",
+        .module = PL_MODULE_DATUM
+    },
+    {
+        .file = "pl_geodesic.opencl",
+        .module = PL_MODULE_GEODESIC
+    },
+    {
+        .file = "pl_warp.opencl",
+        .module = PL_MODULE_WARP
+    },
+    {
+        .file = "pl_sample_nearest.opencl",
+        .module = PL_MODULE_NEAREST_NEIGHBOR
+    },
+    {
+        .file = "pl_sample_linear.opencl",
+        .module = PL_MODULE_BILINEAR
+    },
+    {
+        .file = "pl_sample_bicubic.opencl",
+        .module = PL_MODULE_BICUBIC
+    },
+    {
+        .file = "pl_sample_quasi_bicubic.opencl",
+        .module = PL_MODULE_QUASI_BICUBIC
+    },
+    {
+        .file = "pl_project_albers_equal_area.opencl",
+        .module = PL_MODULE_ALBERS_EQUAL_AREA
+    },
+    {
+        .file = "pl_project_american_polyconic.opencl",
+        .module = PL_MODULE_AMERICAN_POLYCONIC
+    },
+    {
+        .file = "pl_project_lambert_azimuthal_equal_area.opencl",
+        .module = PL_MODULE_LAMBERT_AZIMUTHAL_EQUAL_AREA
+    },
+    {
+        .file = "pl_project_lambert_conformal_conic.opencl",
+        .module = PL_MODULE_LAMBERT_CONFORMAL_CONIC
+    },
+    {
+        .file = "pl_project_mercator.opencl",
+        .module = PL_MODULE_MERCATOR
+    },
+    {
+        .file = "pl_project_oblique_stereographic.opencl",
+        .module = PL_MODULE_OBLIQUE_STEREOGRAPHIC
+    },
+    {
+        .file = "pl_project_robinson.opencl",
+        .module = PL_MODULE_ROBINSON
+    },
+    {
+        .file = "pl_project_transverse_mercator.opencl",
+        .module = PL_MODULE_TRANSVERSE_MERCATOR
+    },
+    {
+        .file = "pl_project_winkel_tripel.opencl",
+        .module = PL_MODULE_WINKEL_TRIPEL
+    }
+};
+
+#define PL_DEBUG 0
 
 #define PL_OPENCL_FILE_EXTENSION ".opencl"
 #define PL_OPENCL_KERNEL_HEADER_FILE "peel.opencl"
 #define PL_OPENCL_KERNEL_FILE_PREFIX "pl_"
+
+#define PL_OPENCL_BUILD_OPTIONS "-Werror -cl-std=CL1.1 -cl-finite-math-only -cl-no-signed-zeros -cl-single-precision-constant"
 
 int check_cl_error(cl_int error, cl_int *outError) {
   if(error != CL_SUCCESS) {
@@ -194,37 +268,15 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
 		if (len > sizeof(PL_OPENCL_FILE_EXTENSION)-1 
             && strncasecmp(name, PL_OPENCL_KERNEL_FILE_PREFIX, sizeof(PL_OPENCL_KERNEL_FILE_PREFIX) - 1) == 0
             && strcasecmp(name + len - (sizeof(PL_OPENCL_FILE_EXTENSION)-1), PL_OPENCL_FILE_EXTENSION) == 0) {
-            if (strcmp(name, "pl_datum.opencl") == 0 && !(modules & PL_MODULE_DATUM))
-                continue;
-            if (strcmp(name, "pl_geodesic.opencl") == 0 && !(modules & PL_MODULE_GEODESIC))
-                continue;
-            if (strcmp(name, "pl_warp.opencl") == 0 && !(modules & PL_MODULE_WARP))
-                continue;
-            if (strcmp(name, "pl_sample_nearest.opencl") == 0 && !(modules & PL_MODULE_NEAREST_NEIGHBOR))
-                continue;
-            if (strcmp(name, "pl_sample_linear.opencl") == 0 && !(modules & PL_MODULE_BILINEAR))
-                continue;
-            if (strcmp(name, "pl_sample_bicubic.opencl") == 0 && !(modules & PL_MODULE_BICUBIC))
-                continue;
-            if (strcmp(name, "pl_sample_quasi_bicubic.opencl") == 0 && !(modules & PL_MODULE_QUASI_BICUBIC))
-                continue;
-            if (strcmp(name, "pl_project_albers_equal_area.opencl") == 0 && !(modules & PL_MODULE_ALBERS_EQUAL_AREA))
-                continue;
-            if (strcmp(name, "pl_project_american_polyconic.opencl") == 0 && !(modules & PL_MODULE_AMERICAN_POLYCONIC))
-                continue;
-            if (strcmp(name, "pl_project_lambert_azimuthal_equal_area.opencl") == 0 && !(modules & PL_MODULE_LAMBERT_AZIMUTHAL_EQUAL_AREA))
-                continue;
-            if (strcmp(name, "pl_project_lambert_conformal_conice.opencl") == 0 && !(modules & PL_MODULE_LAMBERT_CONFORMAL_CONIC))
-                continue;
-            if (strcmp(name, "pl_project_mercator.opencl") == 0 && !(modules & PL_MODULE_MERCATOR))
-                continue;
-            if (strcmp(name, "pl_project_oblique_stereographic.opencl") == 0 && !(modules & PL_MODULE_OBLIQUE_STEREOGRAPHIC))
-                continue;
-            if (strcmp(name, "pl_project_robinson.opencl") == 0 && !(modules & PL_MODULE_ROBINSON))
-                continue;
-            if (strcmp(name, "pl_project_transverse_mercator.opencl") == 0 && !(modules & PL_MODULE_TRANSVERSE_MERCATOR))
-                continue;
-            if (strcmp(name, "pl_project_winkel_tripel.opencl") == 0 && !(modules & PL_MODULE_WINKEL_TRIPEL))
+            int i;
+            int compile = 0;
+            for (i=0; i<sizeof(_pl_modules)/sizeof(_pl_modules[0]); i++) {
+                if (strcmp(name, _pl_modules[i].file) == 0) {
+                    compile = !!(modules & _pl_modules[i].module);
+                    break;
+                }
+            }
+            if (!compile)
                 continue;
 
             if (strlen(path) + strlen(name) + 2 < sizeof(filename)) {
@@ -266,48 +318,37 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
 		return NULL;
 	}
 	
-	error = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+	error = clBuildProgram(program, 0, NULL, PL_OPENCL_BUILD_OPTIONS, NULL, NULL);
 	
+    size_t error_len;
+    char error_buf[4*8192];
+    clGetProgramBuildInfo(program, pl_ctx->device_id, CL_PROGRAM_BUILD_LOG, sizeof(error_buf), 
+            error_buf, &error_len);
+#if PL_DEBUG
+    if (error_len > 1)
+        printf("%s\n", error_buf);
+#endif
+
 	if (error != CL_SUCCESS) {
-		size_t error_len;
-		char error_buf[4*8192];
-		
+#if !PL_DEBUG
+        printf("%s\n", error_buf);
+#endif
 		printf("Error: Failed to build program executable!\n");
 		
-		clGetProgramBuildInfo(program, pl_ctx->device_id, CL_PROGRAM_BUILD_LOG, sizeof(error_buf), 
-							  error_buf, &error_len);
-		
-		printf("%s\n", error_buf);
 		if (outError != NULL)
 			*outError = error;
 		clReleaseProgram(program);
 		return NULL;
 	}
 	
-	size_t binary_length;
-	clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t), &binary_length, NULL);
-	
-	u_char *binary;
-	if ((binary = malloc(binary_length)) == NULL) {
-		clReleaseProgram(program);
-		if (outError != NULL)
-			*outError = CL_OUT_OF_HOST_MEMORY;
-		return NULL;
-	}
-	clGetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof(u_char *), &binary, NULL);
-	
-	clReleaseProgram(program);
-	
 	PLCode *pl_code;
 	if ((pl_code = malloc(sizeof(PLCode))) == NULL) {
-		free(binary);
 		if (outError != NULL)
 			*outError = CL_OUT_OF_HOST_MEMORY;
 		return NULL;
 	}
 	
-	pl_code->binary = binary;
-	pl_code->len = binary_length;
+	pl_code->program = program;
 	pl_code->kernel_count = kernel_count;
     
     if (outError)
@@ -322,42 +363,21 @@ PLCode *pl_compile_code(PLContext *pl_ctx, const char *path, long modules, cl_in
 }
 
 cl_int pl_load_code(PLContext *pl_ctx, PLCode *pl_code) {
-	cl_program program;
 	cl_int error;
-	cl_int binary_status;
 
     struct timeval start_time, end_time;
     
     pl_ctx->last_time = NAN;
     gettimeofday(&start_time, NULL);
 	
-	program = clCreateProgramWithBinary(pl_ctx->ctx, 1, 
-										(const cl_device_id *)&pl_ctx->device_id, 
-										(const size_t *)&pl_code->len, 
-										(const u_char **)&pl_code->binary, 
-										&binary_status, &error);
-	if (error != CL_SUCCESS) {
-		return error;
-	}
-	
-	error = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
-	
-	if (error != CL_SUCCESS) {
-		clReleaseProgram(program);
-		return error;
-	}
-	
 	cl_uint kernel_count_ret;
 	
 	cl_kernel *kernels;
 	if ((kernels = malloc(sizeof(cl_kernel) * pl_code->kernel_count)) == NULL) {
-		clReleaseProgram(program);
 		return CL_OUT_OF_HOST_MEMORY;
 	}
 	
-	error = clCreateKernelsInProgram(program, pl_code->kernel_count, kernels, &kernel_count_ret);
-	
-	clReleaseProgram(program);
+	error = clCreateKernelsInProgram(pl_code->program, pl_code->kernel_count, kernels, &kernel_count_ret);
 	
 	if (error != CL_SUCCESS) {
 		free(kernels);
@@ -389,7 +409,7 @@ void pl_unload_code(PLContext *pl_ctx) {
 void pl_release_code(PLCode *pl_code) {
     if (!pl_code)
         return;
-    if (pl_code->binary)
-        free(pl_code->binary);
+    if (pl_code->program)
+        clReleaseProgram(pl_code->program);
     free(pl_code);
 }

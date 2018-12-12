@@ -14,7 +14,7 @@
 #include <math.h>
 #include <sys/time.h>
 
-PLProjectionBuffer *pl_load_projection_data(PLContext *pl_ctx, const float *xy, int count, int copy, int *outError) {
+PLProjectionBuffer *pl_load_projection_data(PLContext *pl_ctx, const float *xy, size_t count, cl_bool copy, cl_int *outError) {
 	float *xy_pad = NULL;
 	int xy_pad_count = ck_padding(count, PL_FLOAT_VECTOR_SIZE);
 
@@ -87,7 +87,7 @@ cleanup:
 // No local padded copies - data is copied to padded buffer,
 //  any pad area in buffer is zeroed out
 //
-PLProjectionBuffer *pl_load_projection_data_2(PLContext *pl_ctx, const float *x, const float *y, int count, int *outError) {
+PLProjectionBuffer *pl_load_projection_data_2(PLContext *pl_ctx, const float *x, const float *y, size_t count, int *outError) {
 	int xy_pad_count = ck_padding(count, PL_FLOAT_VECTOR_SIZE);
 
 	PLProjectionBuffer *pl_buf = NULL;
@@ -270,12 +270,8 @@ cl_int pl_compare_projection_buffers(PLContext *pl_ctx, PLProjectionBuffer *pl_b
 static cl_int _pl_project(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
         PLProjectionBuffer *pl_buf, float *xy_out, int fwd) {
     struct timeval start_time, end_time;
-    const char *name = _pl_proj_name(proj);
     cl_kernel kernel = NULL;
     cl_int error = CL_SUCCESS;
-
-    if (name == NULL)
-        return CL_INVALID_KERNEL_NAME;
 
     if (proj == PL_PROJECT_LAMBERT_CONFORMAL_CONIC && fabs((params->rlat1 + params->rlat2) * DEG_TO_RAD) < 1.e-7) {
         /* With symmetrical standard parallels the LCC equations break down.
@@ -289,7 +285,7 @@ static cl_int _pl_project(PLContext *pl_ctx, PLProjection proj, PLProjectionPara
         return error;
     }
 
-	kernel = _pl_find_projection_kernel(pl_ctx, name, fwd, params->spheroid);
+	kernel = pl_find_projection_kernel(pl_ctx, proj, fwd, params->spheroid);
     if (kernel == NULL)
         return CL_INVALID_KERNEL_NAME;
 
@@ -313,12 +309,8 @@ static cl_int _pl_project(PLContext *pl_ctx, PLProjection proj, PLProjectionPara
 static cl_int _pl_project_2(PLContext *pl_ctx, PLProjection proj, PLProjectionParams *params,
 			    PLProjectionBuffer *pl_buf, float *x_out, float *y_out, int fwd) {
     struct timeval start_time, end_time;
-    const char *name = _pl_proj_name(proj);
     cl_kernel kernel = NULL;
     cl_int error = CL_SUCCESS;
-
-    if (name == NULL)
-        return CL_INVALID_KERNEL_NAME;
 
     if (proj == PL_PROJECT_LAMBERT_CONFORMAL_CONIC && fabs((params->rlat1 + params->rlat2) * DEG_TO_RAD) < 1.e-7) {
         /* With symmetrical standard parallels the LCC equations break down.
@@ -332,7 +324,7 @@ static cl_int _pl_project_2(PLContext *pl_ctx, PLProjection proj, PLProjectionPa
         return error;
     }
 
-	kernel = _pl_find_projection_kernel(pl_ctx, name, fwd, params->spheroid);
+    kernel = pl_find_projection_kernel(pl_ctx, proj, fwd, params->spheroid);
     if (kernel == NULL)
         return CL_INVALID_KERNEL_NAME;
 

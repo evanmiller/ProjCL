@@ -1,8 +1,5 @@
-* ./configure script
 * more projections
 * elliptical geodesic calculations
 * double precision
-* Fix Robinson projection bug
-* Fix Transverse Mercator inverse projection
 
 If you fix any of these send me an email, emmiller@gmail.com

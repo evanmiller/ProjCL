@@ -5,16 +5,14 @@ float8 phi_sph2ell(float8 phi, float ecc, float log_k0, float c0) {
     int i;
     float8 log_num;
     float8 phi_ell;
-    float8 esinp;
     
     i = OBLIQUE_STEREOGRAPHIC_N_ITER;
-    log_num = (log1p(tan(0.5f * phi)) - log1p(tan(-0.5f * phi)) - log_k0)/c0;
+    log_num = (asinh(tan(phi)) - log_k0)/c0;
     phi_ell = phi;
 
     do {
         phi = phi_ell;
-        esinp = ecc * sin(phi);
-        phi_ell = asin(tanh(log_num - 0.5f * ecc * log1p(-esinp) + 0.5f * ecc * log1p(esinp)));
+        phi_ell = atan(sinh(log_num + ecc * atanh(ecc * sin(phi))));
     } while (any(fabs(phi_ell - phi) > TOL7) && --i);
 
     return phi_ell;
@@ -47,10 +45,9 @@ __kernel void pl_project_oblique_stereographic_e(
 
     /* Project ellipsoid onto sphere */
     float8 lambda = c0 * lambda_ell;
-    float8 esinp = ecc * sin(phi_ell);
-    float8 phi = asin(tanh(log_k0 + c0 * (log1p(tan(.5f*phi_ell)) - log1p(tan(-0.5f*phi_ell)))
-        + 0.5f * c0 * ecc * (log1p(-esinp) - log1p(esinp)))); 
-    // Gudermannian Function gd(x) = 2 atan(exp(x)) - M_PI_2 = asin(tanh(x))
+    float8 phi = atan(sinh(log_k0 + c0 * (asinh(tan(phi_ell)) - ecc * atanh(ecc * sin(phi_ell)))));
+    // Gudermannian Function gd(x) = 2 atan(exp(x)) - M_PI_2 = asin(tanh(x)) = atan(sinh(x))
+    // also log(tan(0.5f * x + M_PI_4)) = asinh(tan(x))
 
     /* Project sphere onto plane */
     float8 sinPhi, cosPhi;
@@ -95,7 +92,7 @@ __kernel void pl_unproject_oblique_stereographic_e(
 	float8 y = (xy_in[i].odd - y0) / scale;
 	
 	float8 lambda, phi;
-    float8 rho, c;
+    float8 rho;
     float8 sinPhiC, cosPhiC;
 
     rho = hypot(x, y);

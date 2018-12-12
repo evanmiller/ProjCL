@@ -58,8 +58,8 @@ __kernel void pl_unproject_lambert_conformal_conic_s(
     
     rho = copysign(hypot(x, y), n);
     
-    phi = select(copysign(M_PI_2F, n), -asin(tanh(log(rho/c)/n)), rho != 0.f);
-    lambda = atan2(x, y) / n;
+    phi = select(copysign(M_PI_2F, n), -atan(sinh(log(rho/c)/n)), rho != 0.f);
+    lambda = atan2(x * copysign(1.f, n), y * copysign(1.f, n)) / n;
     
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
 	xy_out[i].odd = degrees(phi);
@@ -136,7 +136,7 @@ __kernel void pl_unproject_lambert_conformal_conic_e(
     rho = copysign(hypot(x, y), n);
     
     phi = select(copysign(M_PI_2F, n), pl_phi2(log(rho/c)/n, ecc), rho != 0.f);
-    lambda = atan2(x, y) / n;
+    lambda = atan2(x * copysign(1.f, n), y * copysign(1.f, n)) / n;
     
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
 	xy_out[i].odd = degrees(phi);

@@ -16,14 +16,6 @@
 #define C68 .00569661458333333333
 #define C88 .3076171875
 
-#define P00 .33333333333333333333
-#define P01 .17222222222222222222
-#define P02 .10257936507936507936
-#define P10 .06388888888888888888
-#define P11 .06640211640211640211
-#define P20 .01641501294219154443
-
-
 static struct pl_spheroid_info_s pl_spheroid_params[] = {
     { 6370997.0,   6370997.0 },  /* SPHEROID */ 
     { 6378137.0,   6356752.31424 },  /* WGS 84 */
@@ -57,29 +49,25 @@ PLSpheroidInfo _pl_get_spheroid_info(PLSpheroid pl_ell) {
 	info.one_ecc2 = (info.minor_axis * info.minor_axis) / (info.major_axis * info.major_axis);
 	info.ecc2 = 1. - info.one_ecc2;
 	info.ecc = sqrt(info.ecc2);
-	info.ec = 1. - .5 * info.one_ecc2 * log((1. - info.ecc) / (1. + info.ecc)) / info.ecc;
+	info.ec = 1. - .5 * info.one_ecc2 * (log1p(-info.ecc) - log1p(info.ecc)) / info.ecc;
 	
 	double t, es = info.ecc2;
 	info.en[0] = C00 - es * (C02 + es * (C04 + es * (C06 + es * C08)));
 	info.en[1] = es * (C22 - es * (C04 + es * (C06 + es * C08)));
-
-    info.apa[0] = es * P00;
-
 	info.en[2] = (t = es * es) * (C44 - es * (C46 + es * C48));
-
-    info.apa[0] += t * P01;
-    info.apa[1] = t * P10; 
-
 	info.en[3] = (t *= es) * (C66 - es * C68);
 	info.en[4] = t * es * C88;
 
-    info.apa[0] += t * P02;
-    info.apa[1] += t * P11;
-    info.apa[2] = t * P20;
+    /* "Map Projection Used By the USGS", p. 176 */
+    info.apa[0] = es / 3.0 + es * (31.0 * es / 180.0 + es * (517.0 * es / 5040.0));
+    info.apa[1] = es * (23.0 * es / 360.0 + es * (251.0 * es / 3780.0));
+    info.apa[2] = es * es * es * 761.0 / 45360.0;
+
 
     double n = (info.major_axis - info.minor_axis) / (info.major_axis + info.minor_axis);
     double n2 = n * n;
 
+    /* Karney, "Transverse Mercator with an accuracy of a few nanometers" */
     info.krueger_A = (1.0 + (0.25 + 1./64. * n2) * n2)  / (1.0 + n);
 
     /*
