@@ -1,5 +1,4 @@
 [![GitHub Actions build](https://github.com/evanmiller/ProjCL/workflows/build/badge.svg)](https://github.com/evanmiller/ProjCL/actions)
-[![Travis CI build status](https://travis-ci.org/evanmiller/ProjCL.svg?branch=master)](https://travis-ci.org/evanmiller/ProjCL)
 
 ProjCL: OpenCL-powered map projection, geodesic, and image-warping library
 ==
