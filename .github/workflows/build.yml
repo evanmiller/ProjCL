@@ -9,17 +9,21 @@ jobs:
         proj_version: [ 7.2.0 ]
         compiler: [ gcc, gcc-10, clang ]
     steps:
+      - name: Fetch public key
+        run: wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+      - name: Add public key
+        run: sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+      - name: Add repository
+        run: sudo add-apt-repository "deb https://apt.repos.intel.com/oneapi all main"
+      - name: Update repository
+        run: sudo apt update
       - name: Install packages
-        run: sudo apt install ocl-icd-opencl-dev alien
+        run: sudo apt install intel-oneapi-runtime-opencl opencl-c-headers
       - uses: actions/checkout@v2
       - name: Install Proj.4
         run: ./.github/scripts/install-proj4.sh
         env:
           PROJ4_FILE: proj-${{ matrix.proj_version }}
-      - name: Install OpenCL
-        run: ./.github/scripts/install-opencl.sh
-        env:
-          OPENCL_FILE: opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25
       - name: Configure
         run: cmake . -DWITH_PROJ=ON
         env:
