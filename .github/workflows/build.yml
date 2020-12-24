@@ -6,7 +6,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        proj_version: [ 7.2.0 ]
         compiler: [ gcc, gcc-10, clang ]
     steps:
       - name: Fetch public key
@@ -18,12 +17,8 @@ jobs:
       - name: Update repository
         run: sudo apt update
       - name: Install packages
-        run: sudo apt install intel-oneapi-runtime-opencl opencl-c-headers
+        run: sudo apt install intel-oneapi-runtime-opencl opencl-c-headers libproj-dev
       - uses: actions/checkout@v2
-      - name: Install Proj.4
-        run: ./.github/scripts/install-proj4.sh
-        env:
-          PROJ4_FILE: proj-${{ matrix.proj_version }}
       - name: Configure
         run: cmake . -DWITH_PROJ=ON
         env:
@@ -36,14 +31,10 @@ jobs:
     runs-on: macos-10.15
     strategy:
       fail-fast: false
-      matrix:
-        proj_version: [ 7.2.0 ]
     steps:
-      - uses: actions/checkout@v2
       - name: Install Proj.4
-        run: ./.github/scripts/install-proj4.sh
-        env:
-          PROJ4_FILE: proj-${{ matrix.proj_version }}
+        run: brew install proj
+      - uses: actions/checkout@v2
       - name: Configure
         run: cmake . -DWITH_PROJ=ON
       - name: Make
