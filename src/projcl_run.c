@@ -21,9 +21,11 @@
 #include <Accelerate/Accelerate.h>
 #endif
 #ifdef __linux__
-#include "cblas.h"
+#include <cblas.h>
 typedef int __CLPK_integer;
 typedef double __CLPK_doublereal;
+extern int dgetrf_(__CLPK_integer *, __CLPK_integer *, __CLPK_doublereal *, __CLPK_integer *, __CLPK_integer *, __CLPK_integer *);
+extern int dgetri_(__CLPK_integer *, __CLPK_doublereal *, __CLPK_integer *, __CLPK_integer *, __CLPK_doublereal *, __CLPK_integer *, __CLPK_integer *);
 #endif
 
 #define EPS7 1.e-7
