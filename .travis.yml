@@ -2,8 +2,6 @@ language: c
 sudo: required
 matrix:
     include:
-        - os: linux
-          dist: trusty
         - os: osx
           osx_image: xcode6.4
         - os: osx
@@ -11,17 +9,8 @@ matrix:
         - os: osx
           osx_image: xcode8.3
 
-addons:
-    apt:
-        packages:
-            - libblas-dev
-            - liblapack-dev
-            - ocl-icd-opencl-dev
-            - alien
-
 install:
     - ./.travis/install-proj4.sh
-    - ./.travis/install-opencl.sh
 
 script:
     - cmake .

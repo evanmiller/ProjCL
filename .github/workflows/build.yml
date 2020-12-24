@@ -1,0 +1,48 @@
+name: build
+on: [ push, pull_request ]
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        proj_version: [ 7.2.0 ]
+        compiler: [ gcc, gcc-10, clang ]
+    steps:
+      - name: Install packages
+        run: sudo apt install ocl-icd-opencl-dev alien
+      - uses: actions/checkout@v2
+      - name: Install Proj.4
+        run: ./.github/scripts/install-proj4.sh
+        env:
+          PROJ4_FILE: proj-${{ matrix.proj_version }}
+      - name: Install OpenCL
+        run: ./.github/scripts/install-opencl.sh
+        env:
+          OPENCL_FILE: opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25
+      - name: Configure
+        run: cmake . -DWITH_PROJ=ON
+        env:
+          CC: ${{ matrix.compiler }}
+      - name: Make
+        run: make
+      - name: Test
+        run: ./test/projcl_test -CPU
+  macos:
+    runs-on: macos-10.15
+    strategy:
+      fail-fast: false
+      matrix:
+        proj_version: [ 7.2.0 ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Proj.4
+        run: ./.github/scripts/install-proj4.sh
+        env:
+          PROJ4_FILE: proj-${{ matrix.proj_version }}
+      - name: Configure
+        run: cmake . -DWITH_PROJ=ON
+      - name: Make
+        run: make
+      - name: Test
+        run: ./test/projcl_test -CPU
