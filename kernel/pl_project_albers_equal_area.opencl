@@ -43,7 +43,7 @@ __kernel void pl_project_albers_equal_area_s(
 	
 	float8 rho, sinLambda, cosLambda;
 
-	rho = sqrt(c - 2 * n * sin(phi)) / n;
+	rho = sqrt(c - 2 * n * sin(phi));
 
 	sinLambda = sincos(lambda * n, &cosLambda);
 	
@@ -77,10 +77,8 @@ __kernel void pl_unproject_albers_equal_area_s(
 	
 	y = rho0 - y;
 
-    phi = 0.5f * (c / n - (x * x + y * y) * n);
-	
-	phi = select(copysign(M_PI_2F, phi), asin(phi), fabs(phi) <= 1.f);
-	lambda = atan2(x * copysign(1.f, n), y * copysign(1.f, n)) / n;
+    phi = asin(clamp(0.5f * (c - (x * x + y * y)) / n, -1.f, 1.f));
+	lambda = atan2(x, y) / n;
 	
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
 	xy_out[i].odd = degrees(phi);
@@ -114,7 +112,7 @@ __kernel void pl_project_albers_equal_area_e(
 	
 	float8 rho, sinLambda, cosLambda;
 
-	rho = sqrt(c - n * pl_qsfn(sin(phi), ecc, one_ecc2)) / n;
+	rho = sqrt(c - n * pl_qsfn(sin(phi), ecc, one_ecc2));
 
 	sinLambda = sincos(lambda * n, &cosLambda);
 	
@@ -154,10 +152,10 @@ __kernel void pl_unproject_albers_equal_area_e(
 	
 	y = rho0 - y;
 
-	phi = (c / n - (x * x + y * y) * n);
+	phi = (c - (x * x + y * y)) / n;
 	
 	phi = select(copysign(M_PI_2F, phi), phi1_(phi, ecc, one_ecc2), fabs(ec - fabs(phi)) > TOL7);
-	lambda = atan2(x * copysign(1.f, n), y * copysign(1.f, n)) / n;
+	lambda = atan2(x, y) / n;
 	
 	xy_out[i].even = degrees(pl_mod_pi(lambda + lambda0));
 	xy_out[i].odd = degrees(phi);

@@ -328,8 +328,8 @@ cl_int pl_enqueue_kernel_albers_equal_area(PLContext *pl_ctx, cl_kernel kernel,
 	
 	if (_pl_spheroid_is_spherical(params->spheroid)) {
         n = .5 * (sinphi + sin(phi2));
-		c = cosphi * cosphi + 2.f * n * sinphi;
-        rho0 = sqrt(c - 2.f * n * sin(phi0)) / n;
+        c = 1.0 + sin(phi2) * sinphi;
+        rho0 = sqrt(c - 2.f * n * sin(phi0));
 	} else {
 		double ml1, m1;
 		
@@ -346,13 +346,13 @@ cl_int pl_enqueue_kernel_albers_equal_area(PLContext *pl_ctx, cl_kernel kernel,
 		}
         
 		c = m1 * m1 + ml1 * n;
-		rho0 = sqrt(c - n * _pl_qsfn(sin(phi0), info.ecc, info.one_ecc2))/n;
+		rho0 = sqrt(c - n * _pl_qsfn(sin(phi0), info.ecc, info.one_ecc2));
 	}
 	
 	if (!_pl_spheroid_is_spherical(params->spheroid)) {
 		error |= pl_set_kernel_arg_float(pl_ctx, kernel, argc++, info.ec);
 	}
-    error |= pl_set_kernel_arg_float(pl_ctx, kernel, argc++, params->scale * info.major_axis);
+    error |= pl_set_kernel_arg_float(pl_ctx, kernel, argc++, params->scale * info.major_axis / n);
     error |= pl_set_kernel_arg_float(pl_ctx, kernel, argc++, params->x0);
     error |= pl_set_kernel_arg_float(pl_ctx, kernel, argc++, params->y0);
 	error |= pl_set_kernel_arg_float(pl_ctx, kernel, argc++, params->lon0 * DEG_TO_RAD);
